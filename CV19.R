@@ -9,25 +9,22 @@ library(lubridate)
 library(RCurl)
 library(scales)
 
-# set working directory
-# setwd('~/Users/Christian/Desktop/CV/COVID-19/csse_covid_19_data')
-
-# load csv from GitHub
+#### load csv from GitHub ####
 # US numbers
 deaths_us <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv"))
 confirmed_us <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))
 recovered_us <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/04-21-2020.csv"))
 
-# global numbers
+# world numbers
 world_deaths <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"))
 world_recovered <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv"))
 world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"))
+#### end load csv ####
 
-# deaths_us <- read.csv("../COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv")
-# confirmed_us <- read.csv("../COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 
 # columns that will not be used from full DFs deaths_us and confirmed_us
 positions_to_remove <- c(1:6, 8:81)
+
 
 #### deaths by state ####
 states_death <- deaths_us %>%
@@ -41,16 +38,19 @@ states_death <- deaths_us %>%
            Province_State == "North Carolina") %>% 
   select(-positions_to_remove)
 
-date_columns <- colnames(states_death[, 2:ncol(states_death)])
+# massage data
+date_columns <- colnames(states_death[, 2:ncol(states_death)]) # date_columns to be used in melt function below
 death_data <- melt(states_death, id.vars = "Province_State", measure.vars = date_columns)
-death_data$variable<- str_replace(death_data$variable, "X", "")
-death_data$variable <- mdy(death_data$variable)
-death_data <- rename(death_data, c(variable = "date", value = "deaths"))
+death_data$variable<- str_replace(death_data$variable, "X", "") # just removing the 'X' from the column
+death_data$variable <- mdy(death_data$variable) # change to month/day/year format
+death_data <- rename(death_data, c(variable = "date", value = "deaths")) # rename column names for use later
 
+# create death_data DF with State, date, and sum of deaths per State by date
 death_data <- death_data %>%
   group_by(Province_State, date) %>%
   summarize(total_deaths = sum(deaths))
 
+### plot deaths, logarithmic ###
 death_plot_log <- death_data %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State, group = Province_State)) +
   ggtitle("COVID-19 Deaths, [Logarithmic Scale]") +
@@ -60,16 +60,18 @@ death_plot_log <- death_data %>%
   ylab("Deaths") + # name the y-axis
   xlab("Date") + # name the x-axis
   scale_color_discrete("State") + # name the legend
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + # x-axis turned 90 degrees
+  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) + # x-axis label
   scale_y_log10() +
-  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) +
-  annotate("text", x = as.Date("2020-04-20"), y = 440, label = "*", color = "Purple", size = 20) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) + # add a vertical line at 20 Apr 2020
+  annotate("text", x = as.Date("2020-04-20"), y = 440, label = "*", color = "Purple", size = 20) + # add a star to Texas at 20 Apr 2020
   annotate("text", x = as.Date("2020-04-11"), y = 15, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
   annotate("text", x = as.Date("2020-04-10"), y = 14, label = "*", color = "Purple", size = 20)
 
 death_plot_log
+### end plot deaths, logarithmic ###
 
+### plot deaths, linear ###
 death_plot_reg <- death_data %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State, group = Province_State)) +
   ggtitle("COVID-19 Deaths, [Linear Scale]") +
@@ -87,6 +89,7 @@ death_plot_reg <- death_data %>%
   annotate("text", x = as.Date("2020-04-03"), y = 990, label = "*", color = "Purple", size = 20)
 
 death_plot_reg
+### end plot deaths, linear ###
 
 #### confirmed data by state ####
 # create df called states_confirmed from full df confirmed_us
