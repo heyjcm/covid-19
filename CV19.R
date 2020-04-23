@@ -43,7 +43,8 @@ states_death <- deaths_us %>%
            Province_State == "Oklahoma" |
            Province_State == "Kentucky" |
            Province_State == "North Carolina" |
-           Province_State == "Georgia") %>%
+           Province_State == "Georgia" |
+           Province_State == "Illinois") %>%
   select(-positions_to_remove)
 
 # DF for state populations based on states_death filter
@@ -167,7 +168,8 @@ states_confirmed <- confirmed_us %>%
            Province_State == "Oklahoma" |
            Province_State == "Kentucky" |
            Province_State == "North Carolina" |
-           Province_State == "Georgia") %>% 
+           Province_State == "Georgia" |
+           Province_State == "Illinois") %>% 
   select(-positions_to_remove,-12) # selecting all but the the positions_to_remove columns and -12 position
 
 # massage the data
