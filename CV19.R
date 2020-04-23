@@ -66,22 +66,13 @@ deaths_per_million_data <- death_data %>%
   group_by(Province_State, date) %>%
   summarize(total_deaths = sum(deaths / Population))
 
-# calculate deaths per million
-deaths_per_million_aggregated <- death_data %>%
-  group_by(Province_State, date) %>%
-  summarize(total_deaths = sum(deaths / Population)) %>% 
-  filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
-
-# write the daily deaths/million (death_data_abbi_today) table to a .csv
-#write.csv(deaths_per_million_aggregated, paste("Tables/deaths_per_million, ", Sys.Date(), ".csv", sep = ""))
-
 # create death_data DF with State, date, and sum of deaths per State by date to be used for log and linear plots
-death_data <- death_data %>%
+death_data_to_plot <- death_data %>%
   group_by(Province_State, date) %>%
   summarize(total_deaths = sum(deaths))
 
 ### plot deaths, logarithmic ###
-death_plot_log <- death_data %>% 
+death_plot_log <- death_data_to_plot %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State, group = Province_State)) +
   ggtitle("COVID-19 Deaths, [Logarithmic Scale]") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -102,7 +93,7 @@ death_plot_log
 ### end plot deaths, logarithmic ###
 
 ### plot deaths, linear ###
-death_plot_lin <- death_data %>% 
+death_plot_lin <- death_data_to_plot %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State, group = Province_State)) +
   ggtitle("COVID-19 Deaths, [Linear Scale]") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -194,22 +185,13 @@ confirmed_per_million_data <- confirmed_data %>%
   group_by(Province_State, date) %>%
   summarize(total_cases = sum(confirmed_cases / Population))
 
-# calculate confirmed per million
-confirmed_per_million_aggregated <- confirmed_data %>%
-  group_by(Province_State, date) %>%
-  summarize(total_cases = sum(confirmed_cases / Population)) %>% 
-  filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
-
-# write the daily confirmed cases/million table to a .csv
-#write.csv(confirmed_per_million_aggregated, paste("Tables/cases_per_million, ", Sys.Date(), ".csv", sep = ""))
-
 # confirmed data for us in logarithmic and linear plots
-confirmed_data <- confirmed_data %>%
+confirmed_data_to_plot <- confirmed_data %>%
   group_by(Province_State, date) %>%
   summarize(total_cases = sum(confirmed_cases))
 
 ### confirmed cases, logarithmic plot ###
-confirmed_plot_log <- confirmed_data %>% 
+confirmed_plot_log <- confirmed_data_to_plot %>% 
   ggplot(aes(x = date, y = total_cases, color = Province_State, group = Province_State)) +
   ggtitle("Confirmed COVID-19 Cases, [Logarithmic Scale]") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -230,7 +212,7 @@ confirmed_plot_log
 ### end confirmed cases, logarithmic plot ###
 
 ### confirmed cases, linear plot ###
-confirmed_plot_lin <- confirmed_data %>% 
+confirmed_plot_lin <- confirmed_data_to_plot %>% 
   ggplot(aes(x = date, y = total_cases, color = Province_State, group = Province_State)) +
   ggtitle("Confirmed COVID-19 Cases, [Linear Scale]") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -364,3 +346,26 @@ global_plot_reg <- global_active_df %>%
   annotate("text", x = as.Date("2020-01-24"), y = 29500, label = "*", color = "Purple", size = 18)
 
 global_plot_reg
+
+
+#### write tables ####
+# calculate deaths per million aggregated to yesterday's date
+deaths_per_million_aggregated <- death_data %>%
+  group_by(Province_State, date) %>%
+  summarize(total_deaths = sum(deaths / Population)) %>% 
+  filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
+  #filter(date == as.Date("2020-04-22"))
+
+# write the daily deaths/million table to a .csv
+write.csv(deaths_per_million_aggregated, paste("Tables/deaths_per_million, ", Sys.Date(), ".csv", sep = ""))
+
+# calculate confirmed per million aggregated to yesterday's date
+confirmed_per_million_aggregated <- confirmed_data %>%
+  group_by(Province_State, date) %>%
+  summarize(total_cases = sum(confirmed_cases / Population)) %>% 
+  filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
+  #filter(date == as.Date("2020-04-22"))
+
+# write the daily confirmed cases/million table to a .csv
+write.csv(confirmed_per_million_aggregated, paste("Tables/cases_per_million, ", Sys.Date(), ".csv", sep = ""))
+
