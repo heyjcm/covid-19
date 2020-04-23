@@ -1,4 +1,4 @@
-# load libraries
+#### load libraries ####
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -32,7 +32,6 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 
 # columns that will not be used from full DFs deaths_us and confirmed_us
 positions_to_remove <- c(1:6, 8:11, 13:81)
-#positions_to_remove <- c(1:6, 8:81)
 
 #### deaths by state ####
 states_death <- deaths_us %>%
@@ -74,7 +73,7 @@ deaths_per_million_aggregated <- death_data %>%
   filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
 
 # write the daily deaths/million (death_data_abbi_today) table to a .csv
-write.csv(deaths_per_million_aggregated, paste("Tables/", Sys.Date(), ".csv", sep = ""))
+#write.csv(deaths_per_million_aggregated, paste("Tables/deaths_per_million, ", Sys.Date(), ".csv", sep = ""))
 
 # create death_data DF with State, date, and sum of deaths per State by date to be used for log and linear plots
 death_data <- death_data %>%
@@ -103,7 +102,7 @@ death_plot_log
 ### end plot deaths, logarithmic ###
 
 ### plot deaths, linear ###
-death_plot_linear <- death_data %>% 
+death_plot_lin <- death_data %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State, group = Province_State)) +
   ggtitle("COVID-19 Deaths, [Linear Scale]") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -119,11 +118,11 @@ death_plot_linear <- death_data %>%
   annotate("text", x = as.Date("2020-04-04"), y = 1000, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
   annotate("text", x = as.Date("2020-04-03"), y = 990, label = "*", color = "Purple", size = 20)
 
-death_plot_linear
+death_plot_lin
 ### end deaths plot, linear ###
 
 ### plot deaths per million, linear ###
-death_per_million_plot <- deaths_per_million_data %>% 
+death_per_million_plot_lin <- deaths_per_million_data %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State, group = Province_State)) +
   ggtitle("COVID-19 Deaths per Million, [Linear Scale]") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -139,7 +138,7 @@ death_per_million_plot <- deaths_per_million_data %>%
   # annotate("text", x = as.Date("2020-04-04"), y = 1000, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
   # annotate("text", x = as.Date("2020-04-03"), y = 990, label = "*", color = "Purple", size = 20)
 
-death_per_million_plot
+death_per_million_plot_lin
 ### end deaths per million plot ###
 
 ### plot deaths per million, linear ###
@@ -178,18 +177,38 @@ states_confirmed <- confirmed_us %>%
            Province_State == "Kentucky" |
            Province_State == "North Carolina" |
            Province_State == "Georgia") %>% 
-  select(-positions_to_remove) # selecting all but the the positions_to_remove columns
+  select(-positions_to_remove,-12) # selecting all but the the positions_to_remove columns and -12 position
 
+# massage the data
 date_columns <- colnames(states_confirmed[, 2:ncol(states_confirmed)])
 confirmed_data <- melt(states_confirmed, id.vars = "Province_State", measure.vars = date_columns)
 confirmed_data$variable<- str_replace(confirmed_data$variable, "X", "")
 confirmed_data$variable <- mdy(confirmed_data$variable)
 confirmed_data <- rename(confirmed_data, c(variable = "date", value = "confirmed_cases"))
 
+# merge the state_pop table with the death_data table
+confirmed_data$Population <- state_pop$Population[match(confirmed_data$Province_State, state_pop$Province_State)]
+
+# create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
+confirmed_per_million_data <- confirmed_data %>%
+  group_by(Province_State, date) %>%
+  summarize(total_cases = sum(confirmed_cases / Population))
+
+# calculate confirmed per million
+confirmed_per_million_aggregated <- confirmed_data %>%
+  group_by(Province_State, date) %>%
+  summarize(total_cases = sum(confirmed_cases / Population)) %>% 
+  filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
+
+# write the daily confirmed cases/million table to a .csv
+#write.csv(confirmed_per_million_aggregated, paste("Tables/cases_per_million, ", Sys.Date(), ".csv", sep = ""))
+
+# confirmed data for us in logarithmic and linear plots
 confirmed_data <- confirmed_data %>%
   group_by(Province_State, date) %>%
   summarize(total_cases = sum(confirmed_cases))
 
+### confirmed cases, logarithmic plot ###
 confirmed_plot_log <- confirmed_data %>% 
   ggplot(aes(x = date, y = total_cases, color = Province_State, group = Province_State)) +
   ggtitle("Confirmed COVID-19 Cases, [Logarithmic Scale]") +
@@ -208,8 +227,10 @@ confirmed_plot_log <- confirmed_data %>%
   annotate("text", x = as.Date("2020-04-14"), y = 1000, label = " *", color = "Purple", size = 20)
 
 confirmed_plot_log
+### end confirmed cases, logarithmic plot ###
 
-confirmed_plot_reg <- confirmed_data %>% 
+### confirmed cases, linear plot ###
+confirmed_plot_lin <- confirmed_data %>% 
   ggplot(aes(x = date, y = total_cases, color = Province_State, group = Province_State)) +
   ggtitle("Confirmed COVID-19 Cases, [Linear Scale]") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -225,7 +246,51 @@ confirmed_plot_reg <- confirmed_data %>%
   annotate("text", x = as.Date("2020-04-03"), y = 30000, label = "= Texas, 20 Apr 2020\n[19,751 Cases]", color = "Purple", size = 5, hjust = 0) +
   annotate("text", x = as.Date("2020-04-02"), y = 29500, label = "*", color = "Purple", size = 20)
 
-confirmed_plot_reg
+confirmed_plot_lin
+### end confirmed cases, linear plot ###
+
+### plot confirmed cases per million, linear ###
+confirmed_per_million_plot_lin <- confirmed_per_million_data %>% 
+  ggplot(aes(x = date, y = total_cases, color = Province_State, group = Province_State)) +
+  ggtitle("COVID-19 Confirmed Cases per Million, [Linear Scale]") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_point(show.legend = TRUE) +
+  geom_smooth() +
+  ylab("Confirmed Cases per Million") + # name the y-axis
+  xlab("Date") + # name the x-axis
+  scale_color_discrete("State") + # name the legend
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)# +
+# annotate("text", x = as.Date("2020-04-20"), y = 470, label = "*", color = "Purple", size = 20) +
+# annotate("text", x = as.Date("2020-04-04"), y = 1000, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
+# annotate("text", x = as.Date("2020-04-03"), y = 990, label = "*", color = "Purple", size = 20)
+
+confirmed_per_million_plot_lin
+### end confirmed cases per million linear plot ###
+
+### confirmed cases per million log plot ###
+confirmed_per_million_plot_log <- confirmed_per_million_data %>% 
+  ggplot(aes(x = date, y = total_cases, color = Province_State, group = Province_State)) +
+  ggtitle("COVID-19 Confirmed Cases per Million, [Log Scale]") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_point(show.legend = TRUE) +
+  geom_smooth() +
+  ylab("Confirmed Cases per Million") + # name the y-axis
+  xlab("Date") + # name the x-axis
+  scale_color_discrete("State") + # name the legend
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  scale_y_log10() +
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)# + # vline on 20 Apr
+# annotate("text", x = as.Date("2020-04-20"), y = 470, label = "*", color = "Purple", size = 20) +
+# annotate("text", x = as.Date("2020-04-04"), y = 1000, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
+# annotate("text", x = as.Date("2020-04-03"), y = 990, label = "*", color = "Purple", size = 20)
+
+confirmed_per_million_plot_log
+### end confirmed cases per million log plot ###
+
+
 
 #### world calculations ####
 global_positions_to_remove <- c(1, 3:4) # indeces of the columns that aren't needed in the graph
