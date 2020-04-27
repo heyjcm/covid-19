@@ -284,8 +284,8 @@ global_deaths <- world_deaths %>%
   filter(Country.Region == "US" |
            Country.Region == "Germany" |
            Country.Region == "Korea, South" |
-           Country.Region == "Italy" |
-           Country.Region == "") %>%
+           Country.Region == "Sweden" |
+           Country.Region == "Italy") %>%
   select(-global_positions_to_remove)
 
 # process to massage data
@@ -300,6 +300,7 @@ global_recovered <- world_recovered %>%
   filter(Country.Region == "US" |
            Country.Region == "Germany" |
            Country.Region == "Korea, South" |
+           Country.Region == "Sweden" |
            Country.Region == "Italy") %>%
   select(-global_positions_to_remove)
 
@@ -313,6 +314,7 @@ global_confirmed <- world_confirmed %>%
   filter(Country.Region == "US" |
            Country.Region == "Germany" |
            Country.Region == "Korea, South" |
+           Country.Region == "Sweden" |
            Country.Region == "Italy") %>% 
   select(-global_positions_to_remove)
 
@@ -371,3 +373,16 @@ confirmed_per_million_aggregated <- confirmed_data %>%
 # write the daily confirmed cases/million table to a .csv
 write.csv(confirmed_per_million_aggregated, paste("Tables/cases_per_million, ", Sys.Date(), ".csv", sep = ""))
 
+
+
+
+
+pdf(file="cases_per_million_lin_test.pdf", width = 827, height = 643)
+
+confirmed_plot_lin
+dev.copy(png,'myplot.png', width = 827, height = 643)
+dev.off()
+
+png(file="deaths_per_million_lin_test.png", width = 827, height = 643)
+death_per_million_plot_lin
+dev.off()
