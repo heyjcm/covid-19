@@ -285,7 +285,8 @@ global_deaths <- world_deaths %>%
            Country.Region == "Germany" |
            Country.Region == "Korea, South" |
            Country.Region == "Sweden" |
-           Country.Region == "Italy") %>%
+           Country.Region == "Italy" |
+           Country.Region == "Philippines") %>%
   select(-global_positions_to_remove)
 
 # process to massage data
@@ -301,7 +302,8 @@ global_recovered <- world_recovered %>%
            Country.Region == "Germany" |
            Country.Region == "Korea, South" |
            Country.Region == "Sweden" |
-           Country.Region == "Italy") %>%
+           Country.Region == "Italy" |
+           Country.Region == "Philippines") %>%
   select(-global_positions_to_remove)
 
 date_columns <- colnames(global_recovered[, 2:ncol(global_recovered)])
@@ -315,7 +317,8 @@ global_confirmed <- world_confirmed %>%
            Country.Region == "Germany" |
            Country.Region == "Korea, South" |
            Country.Region == "Sweden" |
-           Country.Region == "Italy") %>% 
+           Country.Region == "Italy" |
+           Country.Region == "Philippines") %>% 
   select(-global_positions_to_remove)
 
 date_columns <- colnames(global_confirmed[, 2:ncol(global_confirmed)])
@@ -363,7 +366,7 @@ deaths_per_million_aggregated <- death_data %>%
 # write the daily deaths/million table to a .csv
 write.csv(deaths_per_million_aggregated, paste("Tables/deaths_per_million, ", Sys.Date(), ".csv", sep = ""))
 
-# calculate confirmed per million aggregated to yesterday's date
+# calculate confirmed per million aggregated to yes terday's date
 confirmed_per_million_aggregated <- confirmed_data %>%
   group_by(Province_State, date) %>%
   summarize(total_cases = sum(confirmed_cases / Population)) %>% 
@@ -372,6 +375,16 @@ confirmed_per_million_aggregated <- confirmed_data %>%
 
 # write the daily confirmed cases/million table to a .csv
 write.csv(confirmed_per_million_aggregated, paste("Tables/cases_per_million, ", Sys.Date(), ".csv", sep = ""))
+
+
+# calculate confirmed per million aggregated to yesterday's date
+global_confirmed_summary <- global_confirmed_data %>%
+  group_by(Country.Region, date) %>%
+  filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
+#filter(date == as.Date("2020-04-22"))
+
+# write the daily confirmed cases/million table to a .csv
+write.csv(global_confirmed_summary, paste("Tables/global_confirmed_count, ", Sys.Date(), ".csv", sep = ""))
 
 
 
