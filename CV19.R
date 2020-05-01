@@ -30,21 +30,25 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 
 #### end load csv ####
 
+# my states
+my_states <- c("Colorado",
+               "Texas",
+               "California",
+               "Illinois",
+               "Georgia",
+               "Florida",
+               "Iowa",
+               "North Dakota",
+               "Oklahoma",
+               "Utah")
+
 # columns that will not be used from full DFs deaths_us and confirmed_us
 positions_to_remove <- c(1:6, 8:11, 13:81)
 
 #### deaths by state ####
 states_death <- deaths_us %>%
   group_by(Province_State) %>%
-  filter(Province_State == "Colorado" |
-           Province_State == "Texas" |
-           Province_State == "California" |
-           Province_State == "Wisconsin" |
-           Province_State == "Oklahoma" |
-           Province_State == "Kentucky" |
-           Province_State == "North Carolina" |
-           Province_State == "Georgia" |
-           Province_State == "Illinois") %>%
+  filter(Province_State %in% my_states) %>% 
   select(-positions_to_remove)
 
 # DF for state populations based on states_death filter
@@ -85,10 +89,10 @@ death_plot_log <- death_data_to_plot %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + # x-axis turned 90 degrees
   scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) + # x-axis label
   scale_y_log10() +
-  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) + # add a vertical line at 20 Apr 2020
-  annotate("text", x = as.Date("2020-04-20"), y = 440, label = "*", color = "Purple", size = 20) + # add a star to Texas at 20 Apr 2020
-  annotate("text", x = as.Date("2020-04-11"), y = 15, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
-  annotate("text", x = as.Date("2020-04-10"), y = 14, label = "*", color = "Purple", size = 20)
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) #+ # add a vertical line at 20 Apr 2020
+  #annotate("text", x = as.Date("2020-04-20"), y = 440, label = "*", color = "Purple", size = 20) + # add a star to Texas at 20 Apr 2020
+  #annotate("text", x = as.Date("2020-04-11"), y = 15, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
+  #annotate("text", x = as.Date("2020-04-10"), y = 14, label = "*", color = "Purple", size = 20)
 
 death_plot_log
 ### end plot deaths, logarithmic ###
@@ -105,10 +109,10 @@ death_plot_lin <- death_data_to_plot %>%
   scale_color_discrete("State") + # name the legend
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
-  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) +
-  annotate("text", x = as.Date("2020-04-20"), y = 470, label = "*", color = "Purple", size = 20) +
-  annotate("text", x = as.Date("2020-04-04"), y = 1000, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
-  annotate("text", x = as.Date("2020-04-03"), y = 990, label = "*", color = "Purple", size = 20)
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) #+
+  #annotate("text", x = as.Date("2020-04-20"), y = 470, label = "*", color = "Purple", size = 20) +
+  #annotate("text", x = as.Date("2020-04-04"), y = 1000, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
+  #annotate("text", x = as.Date("2020-04-03"), y = 990, label = "*", color = "Purple", size = 20)
 
 death_plot_lin
 ### end deaths plot, linear ###
@@ -161,15 +165,7 @@ death_per_million_plot_log
 # Colorado, Texas, California, Wisconsin, Oklahoma, Kentucky, North Carolina
 states_confirmed <- confirmed_us %>%
   group_by(Province_State) %>%
-  filter(Province_State == "Colorado" |
-           Province_State == "Texas" |
-           Province_State == "California" |
-           Province_State == "Wisconsin" |
-           Province_State == "Oklahoma" |
-           Province_State == "Kentucky" |
-           Province_State == "North Carolina" |
-           Province_State == "Georgia" |
-           Province_State == "Illinois") %>% 
+  filter(Province_State %in% my_states) %>% 
   select(-positions_to_remove,-12) # selecting all but the the positions_to_remove columns and -12 position
 
 # massage the data
@@ -205,10 +201,10 @@ confirmed_plot_log <- confirmed_data_to_plot %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
   scale_y_log10() +
-  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) +
-  annotate("text", x = as.Date("2020-04-20"), y = 17200, label = "*", color = "Purple", size = 20) +
-  annotate("text", x = as.Date("2020-04-15"), y = 1000, label = "= Texas, 20 Apr 2020\n[19,751 Cases]", color = "Purple", size = 5, hjust = 0) +
-  annotate("text", x = as.Date("2020-04-14"), y = 1000, label = " *", color = "Purple", size = 20)
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) #+
+  #annotate("text", x = as.Date("2020-04-20"), y = 17200, label = "*", color = "Purple", size = 20) +
+  #annotate("text", x = as.Date("2020-04-15"), y = 1000, label = "= Texas, 20 Apr 2020\n[19,751 Cases]", color = "Purple", size = 5, hjust = 0) +
+  #annotate("text", x = as.Date("2020-04-14"), y = 1000, label = " *", color = "Purple", size = 20)
 
 confirmed_plot_log
 ### end confirmed cases, logarithmic plot ###
@@ -225,10 +221,10 @@ confirmed_plot_lin <- confirmed_data_to_plot %>%
   scale_color_discrete("State") + # name the legend
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
-  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) +
-  annotate("text", x = as.Date("2020-04-20"), y = 18750, label = "*", color = "Purple", size = 20) +
-  annotate("text", x = as.Date("2020-04-03"), y = 30000, label = "= Texas, 20 Apr 2020\n[19,751 Cases]", color = "Purple", size = 5, hjust = 0) +
-  annotate("text", x = as.Date("2020-04-02"), y = 29500, label = "*", color = "Purple", size = 20)
+  geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) #+
+  #annotate("text", x = as.Date("2020-04-20"), y = 18750, label = "*", color = "Purple", size = 20) +
+  #annotate("text", x = as.Date("2020-04-03"), y = 30000, label = "= Texas, 20 Apr 2020\n[19,751 Cases]", color = "Purple", size = 5, hjust = 0) +
+  #annotate("text", x = as.Date("2020-04-02"), y = 29500, label = "*", color = "Purple", size = 20)
 
 confirmed_plot_lin
 ### end confirmed cases, linear plot ###
@@ -334,7 +330,7 @@ global_active_df <- global_active_df %>%
   group_by(Country.Region, date) %>% 
   summarize(global_active = global_confirmed_data - global_deaths - global_recovered)
 
-global_plot_reg <- global_active_df %>% 
+global_plot_log <- global_active_df %>% 
   ggplot(aes(x = date, y = global_active, color = Country.Region, group = Country.Region)) +
   #scale_colour_manual(values=cbPalette) +
   ggtitle("Active Cases = Confirmed - Deaths - Recovered, [Logarithmic Scale]") +
@@ -352,7 +348,7 @@ global_plot_reg <- global_active_df %>%
   annotate("text", x = as.Date("2020-01-27"), y = 30000, label = "= US, 20 Apr 2020\n[669,903 Active Cases]", color = "Purple", size = 5, hjust = 0) +
   annotate("text", x = as.Date("2020-01-24"), y = 29500, label = "*", color = "Purple", size = 18)
 
-global_plot_reg
+global_plot_log
 
 
 #### write tables ####
