@@ -73,7 +73,7 @@ state_pop <- deaths_us %>%
 
 # massage data
 date_columns <- colnames(states_death[, 3:ncol(states_death)]) # date_columns to be used in melt function below
-death_data <- melt(states_death, id.vars = "Province_State", measure.vars = date_columns)
+death_data <- reshape2::melt(states_death, id.vars = "Province_State", measure.vars = date_columns)
 death_data$variable <- str_replace(death_data$variable, "X", "") # just removing the 'X' from the column
 death_data$variable <- mdy(death_data$variable) # change to month/day/year format
 death_data <- rename(death_data, c(variable = "date", value = "deaths")) # rename column names for use later
@@ -176,7 +176,7 @@ states_confirmed <- confirmed_us %>%
 
 # massage the data
 date_columns <- colnames(states_confirmed[, 2:ncol(states_confirmed)])
-confirmed_data <- melt(states_confirmed, id.vars = "Province_State", measure.vars = date_columns)
+confirmed_data <- reshape2::melt(states_confirmed, id.vars = "Province_State", measure.vars = date_columns)
 confirmed_data$variable<- str_replace(confirmed_data$variable, "X", "")
 confirmed_data$variable <- mdy(confirmed_data$variable)
 confirmed_data <- rename(confirmed_data, c(variable = "date", value = "confirmed_cases"))
@@ -193,26 +193,6 @@ confirmed_per_million_data <- confirmed_data %>%
 confirmed_data_to_plot <- confirmed_data %>%
   group_by(Province_State, date) %>%
   summarize(total_cases = sum(confirmed_cases))
-
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-### test test test ###
-confirmed_bar_to_plot <- mutate(confirmed_data_to_plot, confirmed_delta = total_cases - lag(total_cases))
-confirmed_bar_to_plot <- confirmed_bar_to_plot %>%
-  filter(Province_State == "Georgia")
-
-confirmed_bar_plot <- confirmed_bar_to_plot %>%
-  ggplot(aes(x = date, y = confirmed_delta)) +
-  geom_bar(stat = "identity") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL)
-
-confirmed_bar_plot
-### end test test test ###
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
 
 ### confirmed cases, logarithmic plot ###
 confirmed_plot_log <- confirmed_data_to_plot %>% 
@@ -284,6 +264,68 @@ confirmed_per_million_plot_lin
 ### end confirmed cases per million linear plot ###
 #### end confirmed data by state ####
 
+#### bar graphs ####
+confirmed_bar_to_plot_full <- mutate(confirmed_data_to_plot, confirmed_delta = total_cases - lag(total_cases)) %>%
+  filter(!is.na(confirmed_delta))
+
+for (var in unique(confirmed_bar_to_plot_full$Province_State)) {
+  confirmed_bar_to_plot <- confirmed_bar_to_plot_full %>%
+    filter(Province_State == var)
+
+  # plot the confirmed per day
+  confirmed_bar_plot <- confirmed_bar_to_plot %>%
+    ggplot(aes(x = date, y = confirmed_delta, fill = Province_State)) +
+    geom_bar(stat = "identity", color = "plum") +
+    geom_smooth(color = "blue") +
+    scale_fill_manual(values = "#008080", name = "State") +
+    ggtitle("COVID-19 Confirmed Cases per Day") +
+    theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
+    xlab("Date") +
+    ylab("Number of Confirmed Cases") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL)
+
+  print(confirmed_bar_plot)
+}
+
+### loop to print deaths per day bar graph ###
+deaths_bar_to_plot_full <- mutate(death_data_to_plot, deaths_delta = total_deaths - lag(total_deaths)) %>%
+  filter(!is.na(deaths_delta))
+
+for (var in unique(deaths_bar_to_plot_full$Province_State)) {
+  deaths_bar_to_plot <- deaths_bar_to_plot_full %>%
+    filter(Province_State == var)
+  
+  # plot the deaths per day
+  deaths_bar_plot <- deaths_bar_to_plot %>%
+    ggplot(aes(x = date, y = deaths_delta, fill = Province_State)) +
+    geom_bar(stat = "identity", color = "blue") +
+    #geom_point() +
+    geom_smooth(color = "green") +
+    scale_fill_manual(values = "turquoise", name = "State") +
+    ggtitle("COVID-19 Deaths per Day") +
+    theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
+    xlab("Date") +
+    ylab("Number of Deaths") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL)
+
+  print(deaths_bar_plot)
+}
+### end loop to print deaths per day bar graph ### 
+
+# barplot(deaths_bar_to_plot$deaths_delta,
+#         main = "COVID-19 Deaths per Day",
+#         ylab = "Number of Deaths",
+#         las = 2,
+#         names.arg = deaths_bar_to_plot$date,
+#         col="#69b3a2",
+#         font.axis = 1,
+#         cex.axis = 1,
+#         cex.names=0.8,
+#         ylim = range(pretty(c(0, deaths_bar_to_plot$deaths_delta))))
+#### end bar graphs ####
+
 #### countries calculations ####
 countries <- c("US",
                "Germany",
@@ -346,7 +388,7 @@ global_active_df <- global_active_df %>%
   summarize(global_active = global_confirmed_data - global_deaths - global_recovered)
 
 
-US_active_today <- global_active_df %>% filter(Country.Region == "US" & date == Sys.Date())
+US_active_today <- global_active_df %>% filter(Country.Region == "US" & date == Sys.Date() - 1)
 
 global_plot_log <- global_active_df %>% 
   ggplot(aes(x = date, y = global_active, color = Country.Region)) +
