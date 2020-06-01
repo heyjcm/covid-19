@@ -40,7 +40,7 @@ my_states <- c("Colorado",
                "Illinois",
                "Georgia",
                "Florida",
-               "Iowa",
+               "Virginia", #"Iowa",
                "Michigan", #"North Dakota",
                "Arizona",
                "Wisconsin")#"Utah")
@@ -335,7 +335,9 @@ countries <- c("US",
                "Sweden",
                "Italy",
                "Philippines",
-               "Japan")
+               "Japan",
+               "Argentina",
+               "Chile")
 
 countries_colors <- c("red",
                     "orange",
