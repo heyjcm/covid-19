@@ -45,7 +45,10 @@ my_states <- c("Colorado",
                "Arizona",
                "Wisconsin") #"Utah")
 
-#my_states <- c("New York", "Iowa")
+# secondary/by request states
+# my_states <- c("New York",
+#                "Iowa",
+#                "North Carolina")
 
 
 state_colors <- c("red",
