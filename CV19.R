@@ -35,7 +35,7 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 
 #### variables that will be used later ####
 # primary my_states
-my_states <- c("Colorado",
+list_of_primary_states <- c("Colorado",
                "Texas",
                "California",
                "Illinois",
@@ -46,58 +46,58 @@ my_states <- c("Colorado",
                "Arizona",
                "Wisconsin")
 
-# all the states
-# my_states <- c("Alabama",
-#                "Alaska",
-#                "Arizona",
-#                "Arkansas",
-#                "California",
-#                "Colorado",
-#                "Connecticut",
-#                "Delaware",
-#                "Florida",
-#                "Georgia",
-#                "Hawaii",
-#                "Idaho",
-#                "Illinois",
-#                "Indiana",
-#                "Iowa",
-#                "Kansas",
-#                "Kentucky",
-#                "Louisiana",
-#                "Maine",
-#                "Maryland",
-#                "Massachusetts",
-#                "Michigan",
-#                "Minnesota",
-#                "Mississippi",
-#                "Missouri",
-#                "Montana",
-#                "Nebraska",
-#                "Nevada",
-#                "New Hampshire",
-#                "New Jersey",
-#                "New Mexico",
-#                "New York",
-#                "North Carolina",
-#                "North Dakota",
-#                "Ohio",
-#                "Oklahoma",
-#                "Oregon",
-#                "Pennsylvania",
-#                "Rhode Island",
-#                "South Carolina",
-#                "South Dakota",
-#                "Tennessee",
-#                "Texas",
-#                "Utah",
-#                "Vermont",
-#                "Virginia",
-#                "Washington",
-#                "West Virginia",
-#                "Wisconsin",
-#                "Wyoming")
-
+# function to return all the states in a list
+list_of_all_states <- c("Alabama",
+                 "Alaska",
+                 "Arizona",
+                 "Arkansas",
+                 "California",
+                 "Colorado",
+                 "Connecticut",
+                 "Delaware",
+                 "Florida",
+                 "Georgia",
+                 "Hawaii",
+                 "Idaho",
+                 "Illinois",
+                 "Indiana",
+                 "Iowa",
+                 "Kansas",
+                 "Kentucky",
+                 "Louisiana",
+                 "Maine",
+                 "Maryland",
+                 "Massachusetts",
+                 "Michigan",
+                 "Minnesota",
+                 "Mississippi",
+                 "Missouri",
+                 "Montana",
+                 "Nebraska",
+                 "Nevada",
+                 "New Hampshire",
+                 "New Jersey",
+                 "New Mexico",
+                 "New York",
+                 "North Carolina",
+                 "North Dakota",
+                 "Ohio",
+                 "Oklahoma",
+                 "Oregon",
+                 "Pennsylvania",
+                 "Rhode Island",
+                 "South Carolina",
+                 "South Dakota",
+                 "Tennessee",
+                 "Texas",
+                 "Utah",
+                 "Vermont",
+                 "Virginia",
+                 "Washington",
+                 "West Virginia",
+                 "Wisconsin",
+                 "Wyoming")
+  
 state_colors <- c("red",
                   "orange",
                   "chocolate",
@@ -113,11 +113,14 @@ state_colors <- c("red",
 positions_to_remove <- c(1:6, 8:11, 13:82)
 #### end variables that will be used later ####
 
-death_func <- function(deaths_us, positions_to_remove) {
-  #### deaths by state ####
+#### death_func ####
+# this function creates all the states death data used for creating plot objects
+# this is only a function because it is needed twice (once for the primary states,
+# and once for when making the daily death plots for all states).
+death_func <- function(deaths_us, positions_to_remove, list_of_primary_states) {
   states_death <- deaths_us %>%
     group_by(Province_State) %>%
-    filter(Province_State %in% my_states) %>%
+    filter(Province_State %in% list_of_primary_states) %>%
     select(-positions_to_remove)
   
   # DF for state populations based on states_death filter
@@ -125,9 +128,9 @@ death_func <- function(deaths_us, positions_to_remove) {
     group_by(Province_State) %>%
     summarize(Population = sum(Population / 1000000))
   
-  # massage data
+  # massage the data formatting
   date_columns <- colnames(states_death[, 3:ncol(states_death)]) # date_columns to be used in melt function below
-  death_data <- reshape2::melt(states_death, id.vars = "Province_State", measure.vars = date_columns)
+  death_data <- reshape2::melt(states_death, id.vars = "Province_State", measure.vars = date_columns) # making a new DF using the melt function to have one row for each date with corresponding deaths on that day
   death_data$variable <- str_replace(death_data$variable, "X", "") # just removing the 'X' from the column
   death_data$variable <- mdy(death_data$variable) # change to month/day/year format
   death_data <- rename(death_data, date = variable, deaths = value) # rename column names for use later
@@ -140,6 +143,13 @@ death_func <- function(deaths_us, positions_to_remove) {
     group_by(Province_State, date) %>%
     summarize(total_deaths = sum(deaths / Population))
   
+  return(death_data)
+}
+
+# death_data to be used for death plots
+death_data <- death_func(deaths_us, positions_to_remove, list_of_primary_states)
+
+death_data_to_plot_func <- function(death_data) {
   # create death_data DF with State, date, and sum of deaths per State by date to be used for log and linear plots
   death_data_to_plot <- death_data %>%
     group_by(Province_State, date) %>%
@@ -148,11 +158,10 @@ death_func <- function(deaths_us, positions_to_remove) {
   return(death_data_to_plot)
 }
 
-# call the death_func function that houses all the data
-death_data_to_plot <- death_func(deaths_us, positions_to_remove)
-
-
+#### deaths by state ####
 ### plot deaths, logarithmic ###
+death_data_to_plot <- death_data_to_plot_func(death_data)
+
 death_plot_log <- death_data_to_plot %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
   geom_point() +
@@ -184,13 +193,18 @@ death_plot_lin <- death_data_to_plot %>%
   ylab("Total Deaths") + # name the y-axis
   xlab("Date") + # name the x-axis
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
 death_plot_lin
 ### end deaths plot, linear ###
 
 ### plot deaths per million, linear ###
+# create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
+deaths_per_million_data <- death_data %>%
+  group_by(Province_State, date) %>%
+  summarize(total_deaths = sum(deaths / Population))
+
 death_per_million_plot_log <- deaths_per_million_data %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
   geom_point() +
@@ -201,7 +215,7 @@ death_per_million_plot_log <- deaths_per_million_data %>%
   ylab("Deaths per Million") + # name the y-axis
   xlab("Date") + # name the x-axis
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   scale_y_log10() +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
@@ -219,7 +233,7 @@ death_per_million_plot_lin <- deaths_per_million_data %>%
   ylab("Deaths per Million") + # name the y-axis
   xlab("Date") + # name the x-axis
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
 death_per_million_plot_lin
@@ -325,31 +339,15 @@ confirmed_per_million_plot_lin
 ### end confirmed cases per million linear plot ###
 #### end confirmed data by state ####
 
-#### bar graphs ####
-confirmed_bar_to_plot_full <- mutate(confirmed_data_to_plot, confirmed_delta = total_cases - lag(total_cases)) %>%
-  filter(!is.na(confirmed_delta))
-
-for (var in unique(confirmed_bar_to_plot_full$Province_State)) {
-  confirmed_bar_to_plot <- confirmed_bar_to_plot_full %>%
-    filter(Province_State == var)
-  
-  # plot the confirmed per day
-  confirmed_bar_plot <- confirmed_bar_to_plot %>%
-    ggplot(aes(x = date, y = confirmed_delta, fill = Province_State)) +
-    geom_bar(stat = "identity", color = "plum") +
-    geom_smooth(color = "blue") +
-    scale_fill_manual(values = "#008080", name = "State") +
-    ggtitle("COVID-19 Confirmed Cases per Day") +
-    theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
-    xlab("Date") +
-    ylab("Number of Confirmed Cases") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL)
-  
-  print(confirmed_bar_plot)
-}
+death_data_for_death_by_day <- death_func(deaths_us, positions_to_remove, list_of_all_states)
+death_data_to_plot <- death_data_to_plot_func(death_data_for_death_by_day)
 
 ### loop to print deaths per day bar graph ###
+states_death_list <- list()
+
+# a shitty iterator
+i <- 1
+
 deaths_bar_to_plot_full <- mutate(death_data_to_plot, deaths_delta = total_deaths - lag(total_deaths)) %>%
   filter(!is.na(deaths_delta))
 
@@ -370,10 +368,43 @@ for (var in unique(deaths_bar_to_plot_full$Province_State)) {
     ylab("Number of Deaths") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL)
-  
-  print(deaths_bar_plot)
+
+  states_death_list[[i]] <- deaths_bar_plot
+  i = i + 1
 }
-### end loop to print deaths per day bar graph ### 
+### end loop to print deaths per day bar graph ###
+
+
+#### bar graphs for confirmed cases in states ####
+states_confirmed_list <- list()
+
+# another shitty iterator
+i <- 1
+
+confirmed_bar_to_plot_full <- mutate(confirmed_data_to_plot, confirmed_delta = total_cases - lag(total_cases)) %>%
+  filter(!is.na(confirmed_delta))
+
+for (var in unique(confirmed_bar_to_plot_full$Province_State)) {
+  confirmed_bar_to_plot <- confirmed_bar_to_plot_full %>%
+    filter(Province_State == var)
+  
+  # plot the confirmed per day
+  confirmed_bar_plot <- confirmed_bar_to_plot %>%
+    ggplot(aes(x = date, y = confirmed_delta, fill = Province_State)) +
+    geom_bar(stat = "identity", color = "plum") +
+    geom_smooth(color = "blue") +
+    scale_fill_manual(values = "#008080", name = "State") +
+    ggtitle("COVID-19 Confirmed Cases per Day") +
+    theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
+    xlab("Date") +
+    ylab("Number of Confirmed Cases") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL)
+  
+  states_confirmed_list[[i]] <- confirmed_bar_plot
+  i = i + 1
+}
+### end loop to print confirmed cases per day bar graph ###
 
 # barplot(deaths_bar_to_plot$deaths_delta,
 #         main = "COVID-19 Deaths per Day",
