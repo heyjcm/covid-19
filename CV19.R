@@ -33,23 +33,69 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 #### end load csv ####
 
 #### variables that will be used later ####
-# my states
+# primary my_states
 my_states <- c("Colorado",
                "Texas",
                "California",
                "Illinois",
                "Georgia",
                "Florida",
-               "Virginia", #"Iowa",
-               "Michigan", #"North Dakota",
+               "Virginia",
+               "Michigan",
                "Arizona",
-               "Wisconsin") #"Utah")
+               "Wisconsin")
 
-# secondary/by request states
-# my_states <- c("New York",
+# all the states
+# my_states <- c("Alabama",
+#                "Alaska",
+#                "Arizona",
+#                "Arkansas",
+#                "California",
+#                "Colorado",
+#                "Connecticut",
+#                "Delaware",
+#                "Florida",
+#                "Georgia",
+#                "Hawaii",
+#                "Idaho",
+#                "Illinois",
+#                "Indiana",
 #                "Iowa",
-#                "North Carolina")
-
+#                "Kansas",
+#                "Kentucky",
+#                "Louisiana",
+#                "Maine",
+#                "Maryland",
+#                "Massachusetts",
+#                "Michigan",
+#                "Minnesota",
+#                "Mississippi",
+#                "Missouri",
+#                "Montana",
+#                "Nebraska",
+#                "Nevada",
+#                "New Hampshire",
+#                "New Jersey",
+#                "New Mexico",
+#                "New York",
+#                "North Carolina",
+#                "North Dakota",
+#                "Ohio",
+#                "Oklahoma",
+#                "Oregon",
+#                "Pennsylvania",
+#                "Rhode Island",
+#                "South Carolina",
+#                "South Dakota",
+#                "Tennessee",
+#                "Texas",
+#                "Utah",
+#                "Vermont",
+#                "Virginia",
+#                "Washington",
+#                "West Virginia",
+#                "Wisconsin",
+#                "Wyoming")
 
 state_colors <- c("red",
                   "orange",
