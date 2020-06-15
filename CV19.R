@@ -113,20 +113,26 @@ state_colors <- c("red",
 positions_to_remove <- c(1:6, 8:11, 13:82)
 #### end variables that will be used later ####
 
-#### death_func ####
-# this function creates all the states death data used for creating plot objects
-# this is only a function because it is needed twice (once for the primary states,
-# and once for when making the daily death plots for all states).
-death_func <- function(deaths_us, positions_to_remove, list_of_primary_states) {
-  states_death <- deaths_us %>%
-    group_by(Province_State) %>%
-    filter(Province_State %in% list_of_primary_states) %>%
-    select(-positions_to_remove)
-  
+state_pop_func <- function(deaths_us) {
   # DF for state populations based on states_death filter
   state_pop <- deaths_us %>%
     group_by(Province_State) %>%
     summarize(Population = sum(Population / 1000000))
+  
+  return(state_pop)
+}
+
+state_pop <- state_pop_func(deaths_us)
+
+#### death_func ####
+# this function creates all the states death data used for creating plot objects
+# this is only a function because it is needed twice (once for the primary states,
+# and once for when making the daily death plots for all states).
+death_func <- function(deaths_us, positions_to_remove, list_of_states, state_pop) {
+  states_death <- deaths_us %>%
+    group_by(Province_State) %>%
+    filter(Province_State %in% list_of_states) %>%
+    select(-positions_to_remove)
   
   # massage the data formatting
   date_columns <- colnames(states_death[, 3:ncol(states_death)]) # date_columns to be used in melt function below
@@ -147,8 +153,9 @@ death_func <- function(deaths_us, positions_to_remove, list_of_primary_states) {
 }
 
 # death_data to be used for death plots
-death_data <- death_func(deaths_us, positions_to_remove, list_of_primary_states)
+death_data <- death_func(deaths_us, positions_to_remove, list_of_primary_states, state_pop)
 
+# function returns the death data to plot
 death_data_to_plot_func <- function(death_data) {
   # create death_data DF with State, date, and sum of deaths per State by date to be used for log and linear plots
   death_data_to_plot <- death_data %>%
@@ -240,34 +247,42 @@ death_per_million_plot_lin
 ### end deaths per million plot ###
 #### end deaths by state ####
 
-#### confirmed data by state ####
-# create df called states_confirmed from full df confirmed_us
-# this will be grouped by State and filtered by the following:
-# Colorado, Texas, California, Wisconsin, Oklahoma, Kentucky, North Carolina
-states_confirmed <- confirmed_us %>%
-  group_by(Province_State) %>%
-  filter(Province_State %in% my_states) %>% 
-  select(-positions_to_remove,-12) # selecting all but the the positions_to_remove columns and -12 position
 
-# massage the data
-date_columns <- colnames(states_confirmed[, 2:ncol(states_confirmed)])
-confirmed_data <- reshape2::melt(states_confirmed, id.vars = "Province_State", measure.vars = date_columns)
-confirmed_data$variable<- str_replace(confirmed_data$variable, "X", "")
-confirmed_data$variable <- mdy(confirmed_data$variable)
-confirmed_data <- rename(confirmed_data, c(variable = "date", value = "confirmed_cases"))
+#### start confirmed by state ####
+confirmed_func <- function(confirmed_us, positions_to_remove, list_of_states, state_pop) {
+  # create df called states_confirmed from full df confirmed_us
+  # this will be grouped by State and filtered by the following:
+  # Colorado, Texas, California, Wisconsin, Oklahoma, Kentucky, North Carolina
+  states_confirmed <- confirmed_us %>%
+    group_by(Province_State) %>%
+    filter(Province_State %in% list_of_states) %>% 
+    select(-positions_to_remove, -12) # selecting all but the the positions_to_remove columns and -12 position
+  
+  # massage the data
+  date_columns <- colnames(states_confirmed[, 2:ncol(states_confirmed)])
+  confirmed_data <- reshape2::melt(states_confirmed, id.vars = "Province_State", measure.vars = date_columns)
+  confirmed_data$variable<- str_replace(confirmed_data$variable, "X", "")
+  confirmed_data$variable <- mdy(confirmed_data$variable)
+  confirmed_data <- rename(confirmed_data, date = variable, confirmed_cases = value)
+  
+  # merge the state_pop table with the death_data table
+  confirmed_data$Population <- state_pop$Population[match(confirmed_data$Province_State, state_pop$Province_State)]
+  
+  return(confirmed_data)
+}
 
-# merge the state_pop table with the death_data table
-confirmed_data$Population <- state_pop$Population[match(confirmed_data$Province_State, state_pop$Province_State)]
+confirmed_data <- confirmed_func(confirmed_us, positions_to_remove, list_of_primary_states, state_pop)
 
-# create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
-confirmed_per_million_data <- confirmed_data %>%
-  group_by(Province_State, date) %>%
-  summarize(total_cases = sum(confirmed_cases / Population))
+confirmed_data_to_plot_func <- function(confirmed_data) {
+  # confirmed data for us in logarithmic and linear plots
+  confirmed_data_to_plot <- confirmed_data %>%
+    group_by(Province_State, date) %>%
+    summarize(total_cases = sum(confirmed_cases))
+  
+  return(confirmed_data_to_plot)
+}
 
-# confirmed data for us in logarithmic and linear plots
-confirmed_data_to_plot <- confirmed_data %>%
-  group_by(Province_State, date) %>%
-  summarize(total_cases = sum(confirmed_cases))
+confirmed_data_to_plot <- confirmed_data_to_plot_func(confirmed_data)
 
 ### confirmed cases, logarithmic plot ###
 confirmed_plot_log <- confirmed_data_to_plot %>% 
@@ -280,7 +295,7 @@ confirmed_plot_log <- confirmed_data_to_plot %>%
   ylab("Number of Confirmed Cases") + # name the y-axis
   xlab("Date") + # name the x-axis
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   scale_y_log10() +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
@@ -298,11 +313,16 @@ confirmed_plot_lin <- confirmed_data_to_plot %>%
   ylab("Number of Confirmed Cases") + # name the y-axis
   xlab("Date") + # name the x-axis
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
 confirmed_plot_lin
 ### end confirmed cases, linear plot ###
+
+# create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
+confirmed_per_million_data <- confirmed_data %>%
+  group_by(Province_State, date) %>%
+  summarize(total_cases = sum(confirmed_cases / Population))
 
 ### confirmed cases per million log plot ###
 confirmed_per_million_plot_log <- confirmed_per_million_data %>% 
@@ -315,7 +335,7 @@ confirmed_per_million_plot_log <- confirmed_per_million_data %>%
   ylab("Confirmed Cases per Million") + # name the y-axis
   xlab("Date") + # name the x-axis
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 day", minor_breaks = NULL) +
   scale_y_log10() +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
@@ -332,17 +352,19 @@ confirmed_per_million_plot_lin <- confirmed_per_million_data %>%
   ylab("Confirmed Cases per Million") + # name the y-axis
   xlab("Date") + # name the x-axis
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
 confirmed_per_million_plot_lin
 ### end confirmed cases per million linear plot ###
 #### end confirmed data by state ####
 
-death_data_for_death_by_day <- death_func(deaths_us, positions_to_remove, list_of_all_states)
+
+#### start deaths by day graphs ####
+death_data_for_death_by_day <- death_func(deaths_us, positions_to_remove, list_of_all_states, state_pop)
 death_data_to_plot <- death_data_to_plot_func(death_data_for_death_by_day)
 
-### loop to print deaths per day bar graph ###
+#### loop to print deaths per day bar graph ####
 states_death_list <- list()
 
 # a shitty iterator
@@ -379,7 +401,7 @@ for (var in unique(deaths_bar_to_plot_full$Province_State)) {
 states_confirmed_list <- list()
 
 # another shitty iterator
-i <- 1
+j <- 1
 
 confirmed_bar_to_plot_full <- mutate(confirmed_data_to_plot, confirmed_delta = total_cases - lag(total_cases)) %>%
   filter(!is.na(confirmed_delta))
@@ -401,8 +423,8 @@ for (var in unique(confirmed_bar_to_plot_full$Province_State)) {
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL)
   
-  states_confirmed_list[[i]] <- confirmed_bar_plot
-  i = i + 1
+  states_confirmed_list[[j]] <- confirmed_bar_plot
+  j = j + 1
 }
 ### end loop to print confirmed cases per day bar graph ###
 
@@ -563,6 +585,38 @@ dev.off()
 
 
 
+confirmed_func <- function(confirmed_us, positions_to_remove, list_of_states) {
+  # create df called states_confirmed from full df confirmed_us
+  # this will be grouped by State and filtered by the following:
+  # Colorado, Texas, California, Wisconsin, Oklahoma, Kentucky, North Carolina
+  states_confirmed <- confirmed_us %>%
+    group_by(Province_State) %>%
+    filter(Province_State %in% list_of_states) %>% 
+    select(-positions_to_remove, -12) # selecting all but the the positions_to_remove columns and -12 position
+  
+  # massage the data
+  date_columns <- colnames(states_confirmed[, 2:ncol(states_confirmed)])
+  confirmed_data <- reshape2::melt(states_confirmed, id.vars = "Province_State", measure.vars = date_columns)
+  confirmed_data$variable<- str_replace(confirmed_data$variable, "X", "")
+  confirmed_data$variable <- mdy(confirmed_data$variable)
+  confirmed_data <- rename(confirmed_data, date = variable, confirmed_cases = value)
+  
+  # merge the state_pop table with the death_data table
+  confirmed_data$Population <- state_pop$Population[match(confirmed_data$Province_State, state_pop$Province_State)]
+  
+  # create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
+  confirmed_per_million_data <- confirmed_data %>%
+    group_by(Province_State, date) %>%
+    summarize(total_cases = sum(confirmed_cases / Population))
+  
+  return(confirmed_data)
+}
 
-
-
+confirmed_data_to_plot_func <- function(confirmed_data) {
+  # confirmed data for us in logarithmic and linear plots
+  confirmed_data_to_plot <- confirmed_data %>%
+    group_by(Province_State, date) %>%
+    summarize(total_cases = sum(confirmed_cases))
+  
+  return(confirmed_data_to_plot)
+}
