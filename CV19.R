@@ -9,6 +9,7 @@ library(RCurl)
 library(scales)
 library(data.table)
 library(dplyr)
+library(ggpubr)
 #### end load libraries ####
 
 #### load csv from GitHub ####
@@ -112,36 +113,44 @@ state_colors <- c("red",
 positions_to_remove <- c(1:6, 8:11, 13:82)
 #### end variables that will be used later ####
 
-#### deaths by state ####
-states_death <- deaths_us %>%
-  group_by(Province_State) %>%
-  filter(Province_State %in% my_states) %>%
-  select(-positions_to_remove)
+death_func <- function(deaths_us, positions_to_remove) {
+  #### deaths by state ####
+  states_death <- deaths_us %>%
+    group_by(Province_State) %>%
+    filter(Province_State %in% my_states) %>%
+    select(-positions_to_remove)
+  
+  # DF for state populations based on states_death filter
+  state_pop <- deaths_us %>%
+    group_by(Province_State) %>%
+    summarize(Population = sum(Population / 1000000))
+  
+  # massage data
+  date_columns <- colnames(states_death[, 3:ncol(states_death)]) # date_columns to be used in melt function below
+  death_data <- reshape2::melt(states_death, id.vars = "Province_State", measure.vars = date_columns)
+  death_data$variable <- str_replace(death_data$variable, "X", "") # just removing the 'X' from the column
+  death_data$variable <- mdy(death_data$variable) # change to month/day/year format
+  death_data <- rename(death_data, date = variable, deaths = value) # rename column names for use later
+  
+  # merge the state_pop table with the death_data table
+  death_data$Population <- state_pop$Population[match(death_data$Province_State, state_pop$Province_State)]
+  
+  # create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
+  deaths_per_million_data <- death_data %>%
+    group_by(Province_State, date) %>%
+    summarize(total_deaths = sum(deaths / Population))
+  
+  # create death_data DF with State, date, and sum of deaths per State by date to be used for log and linear plots
+  death_data_to_plot <- death_data %>%
+    group_by(Province_State, date) %>%
+    summarize(total_deaths = sum(deaths))
+  
+  return(death_data_to_plot)
+}
 
-# DF for state populations based on states_death filter
-state_pop <- deaths_us %>% 
-  group_by(Province_State) %>% 
-  summarize(Population = sum(Population / 1000000))
+# call the death_func function that houses all the data
+death_data_to_plot <- death_func(deaths_us, positions_to_remove)
 
-# massage data
-date_columns <- colnames(states_death[, 3:ncol(states_death)]) # date_columns to be used in melt function below
-death_data <- reshape2::melt(states_death, id.vars = "Province_State", measure.vars = date_columns)
-death_data$variable <- str_replace(death_data$variable, "X", "") # just removing the 'X' from the column
-death_data$variable <- mdy(death_data$variable) # change to month/day/year format
-death_data <- rename(death_data, c(variable = "date", value = "deaths")) # rename column names for use later
-
-# merge the state_pop table with the death_data table
-death_data$Population <- state_pop$Population[match(death_data$Province_State, state_pop$Province_State)]
-
-# create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
-deaths_per_million_data <- death_data %>%
-  group_by(Province_State, date) %>%
-  summarize(total_deaths = sum(deaths / Population))
-
-# create death_data DF with State, date, and sum of deaths per State by date to be used for log and linear plots
-death_data_to_plot <- death_data %>%
-  group_by(Province_State, date) %>%
-  summarize(total_deaths = sum(deaths))
 
 ### plot deaths, logarithmic ###
 death_plot_log <- death_data_to_plot %>% 
@@ -154,7 +163,7 @@ death_plot_log <- death_data_to_plot %>%
   ylab("Total Deaths") + # name the y-axis
   xlab("Date") + # name the x-axis
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + # x-axis turned 90 degrees
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day", minor_breaks = NULL) + # x-axis label
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) + # x-axis label
   scale_y_log10() + # makes the y-axis on a log scale
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) #+ # add a vertical line at 20 Apr 2020
 #annotate("text", x = as.Date("2020-04-20"), y = 440, label = "*", color = "Purple", size = 20) + # add a star to Texas at 20 Apr 2020
@@ -504,12 +513,25 @@ write.csv(global_confirmed_summary, paste("Tables/global_confirmed_count, ", Sys
 
 
 
-pdf(file="cases_per_million_lin_test.pdf", width = 827, height = 643)
+pdf(file="test.pdf", width = 827, height = 1286)
 
-confirmed_plot_lin
-dev.copy(png,'myplot.png', width = 827, height = 643)
+#confirmed_plot_lin
+p1
+dev.copy(png,'myplot.png', width = 827, height = 1286, res = 125)
 dev.off()
 
 png(file="deaths_per_million_lin_test.png", width = 827, height = 643)
 death_per_million_plot_lin
 dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
