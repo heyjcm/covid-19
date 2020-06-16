@@ -55,6 +55,7 @@ list_of_all_states <- c("Alabama",
                  "Colorado",
                  "Connecticut",
                  "Delaware",
+                 "District of Columbia",
                  "Florida",
                  "Georgia",
                  "Hawaii",
@@ -365,15 +366,21 @@ death_data_for_death_by_day <- death_func(deaths_us, positions_to_remove, list_o
 death_data_to_plot <- death_data_to_plot_func(death_data_for_death_by_day)
 
 #### loop to print deaths per day bar graph ####
+# create an empty list to populate with State graphs
 states_death_list <- list()
-
-# a shitty iterator
-i <- 1
 
 deaths_bar_to_plot_full <- mutate(death_data_to_plot, deaths_delta = total_deaths - lag(total_deaths)) %>%
   filter(!is.na(deaths_delta))
 
-for (var in unique(deaths_bar_to_plot_full$Province_State)) {
+for (i in 1:length(unique(deaths_bar_to_plot_full$Province_State))) {
+  # set var to the current State name
+  var = unique(deaths_bar_to_plot_full$Province_State)[i]
+  
+  # just some indicators to show progress in the console
+  # comment out if not wanted
+  print(i)
+  print(var)
+  
   deaths_bar_to_plot <- deaths_bar_to_plot_full %>%
     filter(Province_State == var)
   
@@ -391,8 +398,8 @@ for (var in unique(deaths_bar_to_plot_full$Province_State)) {
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL)
 
+  # add the current State bar plot into the list for use later on
   states_death_list[[i]] <- deaths_bar_plot
-  i = i + 1
 }
 ### end loop to print deaths per day bar graph ###
 
@@ -401,15 +408,21 @@ for (var in unique(deaths_bar_to_plot_full$Province_State)) {
 confirmed_data_for_confirmed_by_day <- confirmed_func(confirmed_us, positions_to_remove, list_of_all_states, state_pop)
 confirmed_data_to_plot <- confirmed_data_to_plot_func(confirmed_data_for_confirmed_by_day)
 
+# create an empty list to populate with State graphs
 states_confirmed_list <- list()
-
-# another shitty iterator
-j <- 1
 
 confirmed_bar_to_plot_full <- mutate(confirmed_data_to_plot, confirmed_delta = total_cases - lag(total_cases)) %>%
   filter(!is.na(confirmed_delta))
 
-for (var in unique(confirmed_bar_to_plot_full$Province_State)) {
+for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
+  # set var to the current State name
+  var = unique(confirmed_bar_to_plot_full$Province_State)[j]
+  
+  # just some indicators to show progress in the console
+  # comment out if not wanted
+  print(j)
+  print(var)
+  
   confirmed_bar_to_plot <- confirmed_bar_to_plot_full %>%
     filter(Province_State == var)
   
@@ -426,8 +439,8 @@ for (var in unique(confirmed_bar_to_plot_full$Province_State)) {
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL)
   
+  # add the current State bar plot into the list for use later on
   states_confirmed_list[[j]] <- confirmed_bar_plot
-  j = j + 1
 }
 ### end loop to print confirmed cases per day bar graph ###
 
@@ -553,16 +566,21 @@ global_plot_log
 # # write the daily confirmed cases/million table to a .csv
 # write.csv(global_confirmed_summary, paste("Tables/global_confirmed_count, ", Sys.Date(), ".csv", sep = ""))
 
+
+
+
 # loop to export states' confirmed/deaths by day plots
-k <- 1
-for (var in list_of_all_states) {
+for (k in 1:length(list_of_all_states)) {
+  # get State's name on the plot
+  var <- as.character(unique(states_confirmed_list[[k]]$data[1]$Province_State))
+  folder_date = Sys.Date()
+  
   # just some indicators to show progress in the console
   print(k)
   print(var)
-
+  
   temp_plot <- ggarrange(states_confirmed_list[[k]], states_death_list[[k]], ncol = 1, nrow = 2)
-  png(filename = paste("Graphs/", Sys.Date(), "/", "states_", var, "_", Sys.Date(),".png", sep = ""), width = 827, height = 1286, res = 125)
+  png(filename = paste("Graphs/", folder_date, "/", "states_", var, "_", folder_date,".png", sep = ""), width = 827, height = 1286, res = 125)
   print(temp_plot)
   dev.off()
-  k = k + 1
 }
