@@ -463,10 +463,10 @@ global_deaths <- world_deaths %>%
 
 # process to massage data
 date_columns <- colnames(global_deaths[, 2:ncol(global_deaths)]) # grab the column headers (except for first one)
-global_death_data <- reshape2::melt(global_deaths, id.vars = "Country.Region", measure.vars = date_columns) # melt states per day and by value
+global_death_data <- melt(global_deaths, id.vars = "Country.Region", measure.vars = date_columns) # melt states per day and by value
 global_death_data$variable<- str_replace(global_death_data$variable, "X", "")
 global_death_data$variable <- mdy(global_death_data$variable)
-global_death_data <- rename(global_death_data, date = variable, globale_deaths = value)
+global_death_data <- rename(global_death_data, date = variable, global_deaths = value)#rename(global_death_data, c(variable = "date", value = "global_deaths"))
 
 # create DF of recovered
 global_recovered <- world_recovered %>%
@@ -474,7 +474,7 @@ global_recovered <- world_recovered %>%
   select(-global_positions_to_remove)
 
 date_columns <- colnames(global_recovered[, 2:ncol(global_recovered)])
-global_recovered_data <- reshape2::melt(global_recovered, id.vars = "Country.Region", measure.vars = date_columns)
+global_recovered_data <- melt(global_recovered, id.vars = "Country.Region", measure.vars = date_columns)
 global_recovered_data$variable<- str_replace(global_recovered_data$variable, "X", "")
 global_recovered_data$variable <- mdy(global_recovered_data$variable)
 global_recovered_data <- rename(global_recovered_data, date = variable, global_recovered = value)
@@ -484,7 +484,7 @@ global_confirmed <- world_confirmed %>%
   select(-global_positions_to_remove)
 
 date_columns <- colnames(global_confirmed[, 2:ncol(global_confirmed)])
-global_confirmed_data <- reshape2::melt(global_confirmed, id.vars = "Country.Region", measure.vars = date_columns)
+global_confirmed_data <- melt(global_confirmed, id.vars = "Country.Region", measure.vars = date_columns)
 global_confirmed_data$variable<- str_replace(global_confirmed_data$variable, "X", "")
 global_confirmed_data$variable <- mdy(global_confirmed_data$variable)
 global_confirmed_data <- rename(global_confirmed_data, date = variable, global_confirmed_data = value)
@@ -553,10 +553,13 @@ global_plot_log
 # # write the daily confirmed cases/million table to a .csv
 # write.csv(global_confirmed_summary, paste("Tables/global_confirmed_count, ", Sys.Date(), ".csv", sep = ""))
 
+# loop to export states' confirmed/deaths by day plots
 k <- 1
 for (var in list_of_all_states) {
-  print(var)
+  # just some indicators to show progress in the console
   print(k)
+  print(var)
+
   temp_plot <- ggarrange(states_confirmed_list[[k]], states_death_list[[k]], ncol = 1, nrow = 2)
   png(filename = paste("Graphs/", Sys.Date(), "/", "states_", var, "_", Sys.Date(),".png", sep = ""), width = 827, height = 1286, res = 125)
   print(temp_plot)
