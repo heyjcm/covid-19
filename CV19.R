@@ -397,7 +397,10 @@ for (var in unique(deaths_bar_to_plot_full$Province_State)) {
 ### end loop to print deaths per day bar graph ###
 
 
-#### bar graphs for confirmed cases in states ####
+#### start bar graphs for confirmed cases in states ####
+confirmed_data_for_confirmed_by_day <- confirmed_func(confirmed_us, positions_to_remove, list_of_all_states, state_pop)
+confirmed_data_to_plot <- confirmed_data_to_plot_func(confirmed_data_for_confirmed_by_day)
+
 states_confirmed_list <- list()
 
 # another shitty iterator
@@ -427,18 +430,6 @@ for (var in unique(confirmed_bar_to_plot_full$Province_State)) {
   j = j + 1
 }
 ### end loop to print confirmed cases per day bar graph ###
-
-# barplot(deaths_bar_to_plot$deaths_delta,
-#         main = "COVID-19 Deaths per Day",
-#         ylab = "Number of Deaths",
-#         las = 2,
-#         names.arg = deaths_bar_to_plot$date,
-#         col="#69b3a2",
-#         font.axis = 1,
-#         cex.axis = 1,
-#         cex.names=0.8,
-#         ylim = range(pretty(c(0, deaths_bar_to_plot$deaths_delta))))
-#### end bar graphs ####
 
 #### countries calculations ####
 countries <- c("US",
@@ -472,10 +463,10 @@ global_deaths <- world_deaths %>%
 
 # process to massage data
 date_columns <- colnames(global_deaths[, 2:ncol(global_deaths)]) # grab the column headers (except for first one)
-global_death_data <- melt(global_deaths, id.vars = "Country.Region", measure.vars = date_columns) # melt states per day and by value
+global_death_data <- reshape2::melt(global_deaths, id.vars = "Country.Region", measure.vars = date_columns) # melt states per day and by value
 global_death_data$variable<- str_replace(global_death_data$variable, "X", "")
 global_death_data$variable <- mdy(global_death_data$variable)
-global_death_data <- rename(global_death_data, c(variable = "date", value = "global_deaths"))
+global_death_data <- rename(global_death_data, date = variable, globale_deaths = value)
 
 # create DF of recovered
 global_recovered <- world_recovered %>%
@@ -483,20 +474,20 @@ global_recovered <- world_recovered %>%
   select(-global_positions_to_remove)
 
 date_columns <- colnames(global_recovered[, 2:ncol(global_recovered)])
-global_recovered_data <- melt(global_recovered, id.vars = "Country.Region", measure.vars = date_columns)
+global_recovered_data <- reshape2::melt(global_recovered, id.vars = "Country.Region", measure.vars = date_columns)
 global_recovered_data$variable<- str_replace(global_recovered_data$variable, "X", "")
 global_recovered_data$variable <- mdy(global_recovered_data$variable)
-global_recovered_data <- rename(global_recovered_data, c(variable = "date", value = "global_recovered"))
+global_recovered_data <- rename(global_recovered_data, date = variable, global_recovered = value)
 
 global_confirmed <- world_confirmed %>%
   filter(Country.Region %in% countries) %>%
   select(-global_positions_to_remove)
 
 date_columns <- colnames(global_confirmed[, 2:ncol(global_confirmed)])
-global_confirmed_data <- melt(global_confirmed, id.vars = "Country.Region", measure.vars = date_columns)
+global_confirmed_data <- reshape2::melt(global_confirmed, id.vars = "Country.Region", measure.vars = date_columns)
 global_confirmed_data$variable<- str_replace(global_confirmed_data$variable, "X", "")
 global_confirmed_data$variable <- mdy(global_confirmed_data$variable)
-global_confirmed_data <- rename(global_confirmed_data, c(variable = "date", value = "global_confirmed_data"))
+global_confirmed_data <- rename(global_confirmed_data, date = variable, global_confirmed_data = value)
 
 global_active_df <- global_confirmed_data
 global_active_df$global_deaths <- global_death_data$global_deaths
@@ -532,91 +523,43 @@ global_plot_log
 #### end countries calculations ####
 
 #### write tables ####
-# calculate deaths per million aggregated to yesterday's date
-deaths_per_million_aggregated <- death_data %>%
-  group_by(Province_State, date) %>%
-  summarize(total_deaths = sum(deaths / Population)) %>% 
-  filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
-#filter(date == as.Date("2020-04-22"))
+# # calculate deaths per million aggregated to yesterday's date
+# deaths_per_million_aggregated <- death_data %>%
+#   group_by(Province_State, date) %>%
+#   summarize(total_deaths = sum(deaths / Population)) %>% 
+#   filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
+# #filter(date == as.Date("2020-04-22"))
+# 
+# # write the daily deaths/million table to a .csv
+# write.csv(deaths_per_million_aggregated, paste("Tables/deaths_per_million, ", Sys.Date(), ".csv", sep = ""))
+# 
+# # calculate confirmed per million aggregated to yes terday's date
+# confirmed_per_million_aggregated <- confirmed_data %>%
+#   group_by(Province_State, date) %>%
+#   summarize(total_cases = sum(confirmed_cases / Population)) %>% 
+#   filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
+# #filter(date == as.Date("2020-04-22"))
+# 
+# # write the daily confirmed cases/million table to a .csv
+# write.csv(confirmed_per_million_aggregated, paste("Tables/cases_per_million, ", Sys.Date(), ".csv", sep = ""))
+# 
+# 
+# # calculate confirmed per million aggregated to yesterday's date
+# global_confirmed_summary <- global_confirmed_data %>%
+#   group_by(Country.Region, date) %>%
+#   filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
+# #filter(date == as.Date("2020-04-22"))
+# 
+# # write the daily confirmed cases/million table to a .csv
+# write.csv(global_confirmed_summary, paste("Tables/global_confirmed_count, ", Sys.Date(), ".csv", sep = ""))
 
-# write the daily deaths/million table to a .csv
-write.csv(deaths_per_million_aggregated, paste("Tables/deaths_per_million, ", Sys.Date(), ".csv", sep = ""))
-
-# calculate confirmed per million aggregated to yes terday's date
-confirmed_per_million_aggregated <- confirmed_data %>%
-  group_by(Province_State, date) %>%
-  summarize(total_cases = sum(confirmed_cases / Population)) %>% 
-  filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
-#filter(date == as.Date("2020-04-22"))
-
-# write the daily confirmed cases/million table to a .csv
-write.csv(confirmed_per_million_aggregated, paste("Tables/cases_per_million, ", Sys.Date(), ".csv", sep = ""))
-
-
-# calculate confirmed per million aggregated to yesterday's date
-global_confirmed_summary <- global_confirmed_data %>%
-  group_by(Country.Region, date) %>%
-  filter(date == Sys.Date() - 1) # -1 day because today's data may not be populated yet
-#filter(date == as.Date("2020-04-22"))
-
-# write the daily confirmed cases/million table to a .csv
-write.csv(global_confirmed_summary, paste("Tables/global_confirmed_count, ", Sys.Date(), ".csv", sep = ""))
-
-
-
-
-
-pdf(file="test.pdf", width = 827, height = 1286)
-
-#confirmed_plot_lin
-p1
-dev.copy(png,'myplot.png', width = 827, height = 1286, res = 125)
-dev.off()
-
-png(file="deaths_per_million_lin_test.png", width = 827, height = 643)
-death_per_million_plot_lin
-dev.off()
-
-
-
-
-
-
-
-
-
-confirmed_func <- function(confirmed_us, positions_to_remove, list_of_states) {
-  # create df called states_confirmed from full df confirmed_us
-  # this will be grouped by State and filtered by the following:
-  # Colorado, Texas, California, Wisconsin, Oklahoma, Kentucky, North Carolina
-  states_confirmed <- confirmed_us %>%
-    group_by(Province_State) %>%
-    filter(Province_State %in% list_of_states) %>% 
-    select(-positions_to_remove, -12) # selecting all but the the positions_to_remove columns and -12 position
-  
-  # massage the data
-  date_columns <- colnames(states_confirmed[, 2:ncol(states_confirmed)])
-  confirmed_data <- reshape2::melt(states_confirmed, id.vars = "Province_State", measure.vars = date_columns)
-  confirmed_data$variable<- str_replace(confirmed_data$variable, "X", "")
-  confirmed_data$variable <- mdy(confirmed_data$variable)
-  confirmed_data <- rename(confirmed_data, date = variable, confirmed_cases = value)
-  
-  # merge the state_pop table with the death_data table
-  confirmed_data$Population <- state_pop$Population[match(confirmed_data$Province_State, state_pop$Province_State)]
-  
-  # create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
-  confirmed_per_million_data <- confirmed_data %>%
-    group_by(Province_State, date) %>%
-    summarize(total_cases = sum(confirmed_cases / Population))
-  
-  return(confirmed_data)
-}
-
-confirmed_data_to_plot_func <- function(confirmed_data) {
-  # confirmed data for us in logarithmic and linear plots
-  confirmed_data_to_plot <- confirmed_data %>%
-    group_by(Province_State, date) %>%
-    summarize(total_cases = sum(confirmed_cases))
-  
-  return(confirmed_data_to_plot)
+k <- 1
+for (var in list_of_all_states) {
+  print(var)
+  print(k)
+  temp_plot <- ggarrange(states_confirmed_list[[k]], states_death_list[[k]], ncol = 1, nrow = 2)
+  png(filename = paste("Graphs/", Sys.Date(), "/", "states_", var, "_", Sys.Date(),".png", sep = ""), width = 827, height = 1286, res = 125)
+  print(temp_plot)
+  dev.off()
+  k = k + 1
 }
