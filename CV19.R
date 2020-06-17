@@ -33,119 +33,45 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 
 #### end load csv ####
 
-#### variables that will be used later ####
-# primary States that I'm specifically tracking in the main graphs
-list_of_primary_states <- c("Colorado",
-               "Texas",
-               "California",
-               "Illinois",
-               "Georgia",
-               "Florida",
-               "Virginia",
-               "Michigan",
-               "Arizona",
-               "Wisconsin")
-
-# all the states in a list
-list_of_all_states <- c("Alabama",
-                 "Alaska",
-                 "Arizona",
-                 "Arkansas",
-                 "California",
-                 "Colorado",
-                 "Connecticut",
-                 "Delaware",
-                 "District of Columbia",
-                 "Florida",
-                 "Georgia",
-                 "Hawaii",
-                 "Idaho",
-                 "Illinois",
-                 "Indiana",
-                 "Iowa",
-                 "Kansas",
-                 "Kentucky",
-                 "Louisiana",
-                 "Maine",
-                 "Maryland",
-                 "Massachusetts",
-                 "Michigan",
-                 "Minnesota",
-                 "Mississippi",
-                 "Missouri",
-                 "Montana",
-                 "Nebraska",
-                 "Nevada",
-                 "New Hampshire",
-                 "New Jersey",
-                 "New Mexico",
-                 "New York",
-                 "North Carolina",
-                 "North Dakota",
-                 "Ohio",
-                 "Oklahoma",
-                 "Oregon",
-                 "Pennsylvania",
-                 "Rhode Island",
-                 "South Carolina",
-                 "South Dakota",
-                 "Tennessee",
-                 "Texas",
-                 "Utah",
-                 "Vermont",
-                 "Virginia",
-                 "Washington",
-                 "West Virginia",
-                 "Wisconsin",
-                 "Wyoming")
-
-# colors for the primary States graphs
-state_colors <- c("red",
-                  "orange",
-                  "chocolate",
-                  "green",
-                  "blue",
-                  "violet",
-                  "pink",
-                  "turquoise",
-                  "skyblue",
-                  "saddlebrown")
-
-# variable to hold the Sys.Date() without dashes for use in file naming
-date_for_filenames <- str_replace_all(as.character(Sys.Date()), "-", "")
-
+#### functions used in this script ####
+### print_plot ###
 # function to print plots
-print_plot <- function(plot_title, is_state_plot = FALSE, current_state = NULL) {
+print_plot <- function(plot_title, is_state_plot = FALSE, name_of_state = NULL) {
+  # variable to hold the Sys.Date() without dashes for use in file naming
+  date_for_filenames <- str_replace_all(as.character(Sys.Date()), "-", "")
   
+  # go into this IF when function is passed the by-day state graphs because
+  # the filenaming is slightly different than the other graphs
   if (is_state_plot == TRUE) {
-    png(filename = paste("Graphs/", date_for_filenames, "/", "states_", current_state, "_", date_for_filenames,".png", sep = ""), width = 827, height = 1286, res = 125)
+    png(filename = paste("Graphs/", date_for_filenames, "/", "states_", name_of_state, "_", date_for_filenames,".png", sep = ""), width = 827, height = 1286, res = 125)
   }
   
+  # this is for all other graphs
   else {
+    # deparse-substitute turns the plot_title variable name into a character
+    # to use as part of the filename
     png(filename = paste("Graphs/", date_for_filenames, "/", deparse(substitute(plot_title)), "_", date_for_filenames,".png", sep = ""), width = 827, height = 643, res = 97)
   }
-    
+  
+  # export the plot from the png() function above
   print(plot_title)
   dev.off()
 }
+### end print_plot ###
 
+### state_pop_func ###
+# creates a DF for state population
+# state_pop_func <- function(deaths_us) {
+#   # DF for state populations based on states_death filter
+#   state_pop <- deaths_us %>%
+#     group_by(Province_State) %>%
+#     summarize(Population = sum(Population / 1000000))
+#   
+#   return(state_pop)
+# }
+### end state_pop_func ###
 
-# variable to remove columns that will not be used from full DFs deaths_us and confirmed_us
-positions_to_remove <- c(1:6, 8:11, 13:82)
-#### end variables that will be used later ####
-
-state_pop_func <- function(deaths_us) {
-  # DF for state populations based on states_death filter
-  state_pop <- deaths_us %>%
-    group_by(Province_State) %>%
-    summarize(Population = sum(Population / 1000000))
-  
-  return(state_pop)
-}
-
-state_pop <- state_pop_func(deaths_us)
-
-#### death_func ####
+### death_func ###
 # this function creates all the states death data used for creating plot objects
 # this is only a function because it is needed twice (once for the primary states,
 # and once for when making the daily death plots for all states).
@@ -172,10 +98,9 @@ death_func <- function(deaths_us, positions_to_remove, list_of_states, state_pop
   
   return(death_data)
 }
+### end death_func ###
 
-# death_data to be used for death plots
-death_data <- death_func(deaths_us, positions_to_remove, list_of_primary_states, state_pop)
-
+### death_data_to_plot_func ###
 # function returns the death data to plot
 death_data_to_plot_func <- function(death_data) {
   # create death_data DF with State, date, and sum of deaths per State by date to be used for log and linear plots
@@ -185,8 +110,59 @@ death_data_to_plot_func <- function(death_data) {
   
   return(death_data_to_plot)
 }
+### end death_data_to_plot_func ###
+
+#### end functions ####
+
+#### variables that will be used later ####
+# primary States that I'm specifically tracking in the main graphs
+list_of_primary_states <- c("Colorado",
+               "Texas",
+               "California",
+               "Illinois",
+               "Georgia",
+               "Florida",
+               "Virginia",
+               "Michigan",
+               "Arizona",
+               "Wisconsin")
+
+# colors for the primary States graphs
+state_colors <- c("red",
+                  "orange",
+                  "chocolate",
+                  "green",
+                  "blue",
+                  "violet",
+                  "pink",
+                  "turquoise",
+                  "skyblue",
+                  "saddlebrown")
+
+# all the states in a list
+# used the built-in state.name and then inserted District of Columbia using append()
+# so it would be in alpha order
+list_of_all_states <- append(state.name, "District of Columbia", after = 8)
+
+# variable to remove columns that will not be used from full DFs deaths_us and confirmed_us
+positions_to_remove <- c(1:6, 8:11, 13:82)
+
+# variable that holds a DF with the population of each state (per million)
+#state_pop <- state_pop_func(deaths_us)
+# DF for state populations based on states_death filter
+state_pop <- deaths_us %>%
+  group_by(Province_State) %>%
+  summarize(Population = sum(Population / 1000000))
+
+#### variables that will be used later ####
+
+
 
 #### deaths by state ####
+# death_data DF to be used for death plots
+death_data <- death_func(deaths_us, positions_to_remove, list_of_primary_states, state_pop)
+#### end variables that will be used later ####
+
 ### plot deaths, logarithmic ###
 death_data_to_plot <- death_data_to_plot_func(death_data)
 
@@ -280,7 +256,7 @@ print_plot(deaths_per_million_lin)
 #### end deaths by state ####
 
 
-#### start confirmed by state ####
+#### start confirmed cases section ####
 confirmed_func <- function(confirmed_us, positions_to_remove, list_of_states, state_pop) {
   # create df called states_confirmed from full df confirmed_us
   # this will be grouped by State and filtered by the following:
@@ -375,7 +351,6 @@ confirmed_per_million_log <- confirmed_per_million_data %>%
   scale_y_log10() +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
-#confirmed_per_million_log
 print_plot(confirmed_per_million_log)
 
 ### end confirmed cases per million log plot ###
@@ -397,15 +372,15 @@ confirmed_per_million_lin <- confirmed_per_million_data %>%
 print_plot(confirmed_per_million_lin)
 
 ### end confirmed cases per million linear plot ###
-#### end confirmed data by state ####
+#### end confirmed cases section ####
 
 
-#### start deaths by day graphs ####
-# create new DF with all the states in it
+#### start deaths and confirmed cases per day State bar graphs ####
+### start deaths by day graphs ###
+# create new DF with all the states death in it
 death_data_for_death_by_day <- death_func(deaths_us, positions_to_remove, list_of_all_states, state_pop)
 death_data_to_plot <- death_data_to_plot_func(death_data_for_death_by_day)
 
-#### loop to print deaths per day bar graph ####
 # create an empty list to populate with State graphs
 states_death_list <- list()
 
@@ -441,10 +416,9 @@ for (i in 1:length(unique(deaths_bar_to_plot_full$Province_State))) {
   # add the current State bar plot into the list for use later on
   states_death_list[[i]] <- deaths_bar_plot
 }
-### end loop to print deaths per day bar graph ###
+### end deaths per day section ###
 
-
-#### start bar graphs for confirmed cases in states ####
+### start confirmed per day section ###
 confirmed_data_for_confirmed_by_day <- confirmed_func(confirmed_us, positions_to_remove, list_of_all_states, state_pop)
 confirmed_data_to_plot <- confirmed_data_to_plot_func(confirmed_data_for_confirmed_by_day)
 
@@ -482,9 +456,29 @@ for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
   # add the current State bar plot into the list for use later on
   states_confirmed_list[[j]] <- confirmed_bar_plot
 }
-### end loop to print confirmed cases per day bar graph ###
+### end confirmed per day section ###
 
-#### countries calculations ####
+### start loop to export States section ###
+# loop to export states' confirmed/deaths by day plots
+for (k in 1:length(list_of_all_states)) {
+  # get State's name on the plot
+  current_state <- as.character(unique(states_confirmed_list[[k]]$data[1]$Province_State))
+  
+  # just some indicators to show progress in the console
+  print(k)
+  print(current_state)
+  
+  # use ggarrange to plot the states_confirmed and states_death plots on a single plot
+  daily_plot <- ggarrange(states_confirmed_list[[k]], states_death_list[[k]], ncol = 1, nrow = 2)
+  
+  #export plot to png
+  print_plot(daily_plot, is_state_plot = TRUE, current_state)
+}
+### end loop to export States section ###
+#### end deaths and confirmed cases per day State bar graphs ####
+
+
+#### start countries graph section ####
 # all the countries in the Active cases plot
 countries <- c("US",
                "Germany",
@@ -571,14 +565,19 @@ countries_active_log <- global_active_df %>%
   annotate("text", x = as.Date("2020-01-27"), y = 450000, label = "= US 20 Apr: 669,903 Active Cases", color = "Purple", size = 5, hjust = 0) +
   annotate("text", x = as.Date("2020-01-27"), y = 200000, label = paste("   US Today: ", format(US_active_today$global_active, big.mark = ",", scientific = FALSE), " Active Cases", sep = ""), color = "Purple", size = 5, hjust = 0)
 
-#countries_active_log
 print_plot(countries_active_log)
 
+#### end countries graph section ####
 
 
-#### end countries calculations ####
+
+
+
+
 
 #### write tables ####
+# note: this section deprecated, but wanted to keep this in case I
+# want to reuse it one day
 # # calculate deaths per million aggregated to yesterday's date
 # deaths_per_million_aggregated <- death_data %>%
 #   group_by(Province_State, date) %>%
@@ -612,21 +611,3 @@ print_plot(countries_active_log)
 
 
 
-# loop to export states' confirmed/deaths by day plots
-for (k in 1:length(list_of_all_states)) {
-  # get State's name on the plot
-  current_state <- as.character(unique(states_confirmed_list[[k]]$data[1]$Province_State))
-  
-  # just some indicators to show progress in the console
-  print(k)
-  print(current_state)
-  
-  # use ggarrange to plot the states_confirmed and states_death plots on a single plot
-  daily_plot <- ggarrange(states_confirmed_list[[k]], states_death_list[[k]], ncol = 1, nrow = 2)
-  
-  #export plot to png
-  print_plot(daily_plot, is_state_plot = TRUE, current_state)
-  # png(filename = paste("Graphs/", date_for_filenames, "/", "states_", current_state, "_", date_for_filenames,".png", sep = ""), width = 827, height = 1286, res = 125)
-  # print(temp_plot)
-  # dev.off()
-}
