@@ -34,7 +34,7 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 #### end load csv ####
 
 #### variables that will be used later ####
-# primary my_states
+# primary States that I'm specifically tracking in the main graphs
 list_of_primary_states <- c("Colorado",
                "Texas",
                "California",
@@ -46,7 +46,7 @@ list_of_primary_states <- c("Colorado",
                "Arizona",
                "Wisconsin")
 
-# function to return all the states in a list
+# all the states in a list
 list_of_all_states <- c("Alabama",
                  "Alaska",
                  "Arizona",
@@ -98,7 +98,8 @@ list_of_all_states <- c("Alabama",
                  "West Virginia",
                  "Wisconsin",
                  "Wyoming")
-  
+
+# colors for the primary States graphs
 state_colors <- c("red",
                   "orange",
                   "chocolate",
@@ -110,7 +111,26 @@ state_colors <- c("red",
                   "skyblue",
                   "saddlebrown")
 
-# columns that will not be used from full DFs deaths_us and confirmed_us
+# variable to hold the Sys.Date() without dashes for use in file naming
+date_for_filenames <- str_replace_all(as.character(Sys.Date()), "-", "")
+
+# function to print plots
+print_plot <- function(plot_title, is_state_plot = FALSE, current_state = NULL) {
+  
+  if (is_state_plot == TRUE) {
+    png(filename = paste("Graphs/", date_for_filenames, "/", "states_", current_state, "_", date_for_filenames,".png", sep = ""), width = 827, height = 1286, res = 125)
+  }
+  
+  else {
+    png(filename = paste("Graphs/", date_for_filenames, "/", deparse(substitute(plot_title)), "_", date_for_filenames,".png", sep = ""), width = 827, height = 643, res = 97)
+  }
+    
+  print(plot_title)
+  dev.off()
+}
+
+
+# variable to remove columns that will not be used from full DFs deaths_us and confirmed_us
 positions_to_remove <- c(1:6, 8:11, 13:82)
 #### end variables that will be used later ####
 
@@ -170,7 +190,7 @@ death_data_to_plot_func <- function(death_data) {
 ### plot deaths, logarithmic ###
 death_data_to_plot <- death_data_to_plot_func(death_data)
 
-death_plot_log <- death_data_to_plot %>% 
+deaths_log <- death_data_to_plot %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
   geom_point() +
   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
@@ -187,11 +207,16 @@ death_plot_log <- death_data_to_plot %>%
 #annotate("text", x = as.Date("2020-04-11"), y = 15, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
 #annotate("text", x = as.Date("2020-04-10"), y = 14, label = "*", color = "Purple", size = 20)
 
-death_plot_log
+#deaths_log
+print_plot(deaths_log)
+
+# png(filename = paste("Graphs/", date_for_filenames, "/", "deaths_log_", date_for_filenames,".png", sep = ""), width = 827, height = 643, res = 97)
+# print(deaths_log)
+# dev.off()
 ### end plot deaths, logarithmic ###
 
 ### plot deaths, linear ###
-death_plot_lin <- death_data_to_plot %>% 
+deaths_lin <- death_data_to_plot %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
   geom_point() +
   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
@@ -204,7 +229,9 @@ death_plot_lin <- death_data_to_plot %>%
   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
-death_plot_lin
+#deaths_lin
+print_plot(deaths_lin)
+
 ### end deaths plot, linear ###
 
 ### plot deaths per million, linear ###
@@ -213,7 +240,7 @@ deaths_per_million_data <- death_data %>%
   group_by(Province_State, date) %>%
   summarize(total_deaths = sum(deaths / Population))
 
-death_per_million_plot_log <- deaths_per_million_data %>% 
+deaths_per_million_log <- deaths_per_million_data %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
   geom_point() +
   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
@@ -227,11 +254,13 @@ death_per_million_plot_log <- deaths_per_million_data %>%
   scale_y_log10() +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
-death_per_million_plot_log
+#deaths_per_million_log
+print_plot(deaths_per_million_log)
+
 ### end deaths per million plot ###
 
 ### plot deaths per million, linear ###
-death_per_million_plot_lin <- deaths_per_million_data %>% 
+deaths_per_million_lin <- deaths_per_million_data %>% 
   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
   geom_point() +
   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
@@ -244,7 +273,9 @@ death_per_million_plot_lin <- deaths_per_million_data %>%
   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
-death_per_million_plot_lin
+#deaths_per_million_lin
+print_plot(deaths_per_million_lin)
+
 ### end deaths per million plot ###
 #### end deaths by state ####
 
@@ -286,7 +317,7 @@ confirmed_data_to_plot_func <- function(confirmed_data) {
 confirmed_data_to_plot <- confirmed_data_to_plot_func(confirmed_data)
 
 ### confirmed cases, logarithmic plot ###
-confirmed_plot_log <- confirmed_data_to_plot %>% 
+confirmed_log <- confirmed_data_to_plot %>% 
   ggplot(aes(x = date, y = total_cases, color = Province_State)) +
   geom_point() +
   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
@@ -300,11 +331,13 @@ confirmed_plot_log <- confirmed_data_to_plot %>%
   scale_y_log10() +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
-confirmed_plot_log
+#confirmed_log
+print_plot(confirmed_log)
+
 ### end confirmed cases, logarithmic plot ###
 
 ### confirmed cases, linear plot ###
-confirmed_plot_lin <- confirmed_data_to_plot %>% 
+confirmed_lin <- confirmed_data_to_plot %>% 
   ggplot(aes(x = date, y = total_cases, color = Province_State)) +
   geom_point() +
   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
@@ -317,7 +350,9 @@ confirmed_plot_lin <- confirmed_data_to_plot %>%
   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
-confirmed_plot_lin
+#confirmed_lin
+print_plot(confirmed_lin)
+
 ### end confirmed cases, linear plot ###
 
 # create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
@@ -326,7 +361,7 @@ confirmed_per_million_data <- confirmed_data %>%
   summarize(total_cases = sum(confirmed_cases / Population))
 
 ### confirmed cases per million log plot ###
-confirmed_per_million_plot_log <- confirmed_per_million_data %>% 
+confirmed_per_million_log <- confirmed_per_million_data %>% 
   ggplot(aes(x = date, y = total_cases, color = Province_State)) +
   geom_point() +
   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
@@ -340,11 +375,13 @@ confirmed_per_million_plot_log <- confirmed_per_million_data %>%
   scale_y_log10() +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
-confirmed_per_million_plot_log
+#confirmed_per_million_log
+print_plot(confirmed_per_million_log)
+
 ### end confirmed cases per million log plot ###
 
 ### plot confirmed cases per million, linear ###
-confirmed_per_million_plot_lin <- confirmed_per_million_data %>% 
+confirmed_per_million_lin <- confirmed_per_million_data %>% 
   ggplot(aes(x = date, y = total_cases, color = Province_State)) +
   geom_point() +
   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
@@ -356,12 +393,15 @@ confirmed_per_million_plot_lin <- confirmed_per_million_data %>%
   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
 
-confirmed_per_million_plot_lin
+#confirmed_per_million_lin
+print_plot(confirmed_per_million_lin)
+
 ### end confirmed cases per million linear plot ###
 #### end confirmed data by state ####
 
 
 #### start deaths by day graphs ####
+# create new DF with all the states in it
 death_data_for_death_by_day <- death_func(deaths_us, positions_to_remove, list_of_all_states, state_pop)
 death_data_to_plot <- death_data_to_plot_func(death_data_for_death_by_day)
 
@@ -445,6 +485,7 @@ for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
 ### end loop to print confirmed cases per day bar graph ###
 
 #### countries calculations ####
+# all the countries in the Active cases plot
 countries <- c("US",
                "Germany",
                "Korea, South",
@@ -469,7 +510,7 @@ countries_colors <- c("red",
 
 global_positions_to_remove <- c(1, 3:4) # indeces of the columns that aren't needed in the graph
 
-# create DF of US deaths
+# create DF of global deaths
 global_deaths <- world_deaths %>%
   filter(Country.Region %in% countries) %>%
   select(-global_positions_to_remove)
@@ -512,7 +553,7 @@ global_active_df <- global_active_df %>%
 
 US_active_today <- global_active_df %>% filter(Country.Region == "US" & date == Sys.Date() - 1)
 
-global_plot_log <- global_active_df %>% 
+countries_active_log <- global_active_df %>% 
   ggplot(aes(x = date, y = global_active, color = Country.Region)) +
   geom_point() +
   scale_color_manual(values = countries_colors, name = "Country") + # manually set the color to countries_colors
@@ -530,7 +571,9 @@ global_plot_log <- global_active_df %>%
   annotate("text", x = as.Date("2020-01-27"), y = 450000, label = "= US 20 Apr: 669,903 Active Cases", color = "Purple", size = 5, hjust = 0) +
   annotate("text", x = as.Date("2020-01-27"), y = 200000, label = paste("   US Today: ", format(US_active_today$global_active, big.mark = ",", scientific = FALSE), " Active Cases", sep = ""), color = "Purple", size = 5, hjust = 0)
 
-global_plot_log
+#countries_active_log
+print_plot(countries_active_log)
+
 
 
 #### end countries calculations ####
@@ -572,15 +615,18 @@ global_plot_log
 # loop to export states' confirmed/deaths by day plots
 for (k in 1:length(list_of_all_states)) {
   # get State's name on the plot
-  var <- as.character(unique(states_confirmed_list[[k]]$data[1]$Province_State))
-  folder_date = Sys.Date()
+  current_state <- as.character(unique(states_confirmed_list[[k]]$data[1]$Province_State))
   
   # just some indicators to show progress in the console
   print(k)
-  print(var)
+  print(current_state)
   
-  temp_plot <- ggarrange(states_confirmed_list[[k]], states_death_list[[k]], ncol = 1, nrow = 2)
-  png(filename = paste("Graphs/", folder_date, "/", "states_", var, "_", folder_date,".png", sep = ""), width = 827, height = 1286, res = 125)
-  print(temp_plot)
-  dev.off()
+  # use ggarrange to plot the states_confirmed and states_death plots on a single plot
+  daily_plot <- ggarrange(states_confirmed_list[[k]], states_death_list[[k]], ncol = 1, nrow = 2)
+  
+  #export plot to png
+  print_plot(daily_plot, is_state_plot = TRUE, current_state)
+  # png(filename = paste("Graphs/", date_for_filenames, "/", "states_", current_state, "_", date_for_filenames,".png", sep = ""), width = 827, height = 1286, res = 125)
+  # print(temp_plot)
+  # dev.off()
 }
