@@ -79,7 +79,7 @@ death_func <- function(deaths_us, positions_to_remove, list_of_states, state_pop
   death_data <- reshape2::melt(states_death, id.vars = "Province_State", measure.vars = date_columns) # making a new DF using the melt function to have one row for each date with corresponding deaths on that day
   death_data$variable <- str_replace(death_data$variable, "X", "") # just removing the 'X' from the column
   death_data$variable <- mdy(death_data$variable) # change to month/day/year format
-  death_data <- rename(death_data, date = variable, deaths = value) # rename column names for use later
+  death_data <- rename(death_data, date = variable, total_deaths = value) # rename column names for use later
   
   # merge the state_pop table with the death_data table
   death_data$Population <- state_pop$Population[match(death_data$Province_State, state_pop$Province_State)]
@@ -118,13 +118,15 @@ death_data_to_plot_func <- function(death_data) {
   # create death_data DF with State, date, and sum of deaths per State by date to be used for log and linear plots
   death_data_to_plot <- death_data %>%
     group_by(Province_State, date) %>%
-    summarize(total = sum(deaths))
+    summarize(total_deaths = sum(total_deaths))
   
   return(death_data_to_plot)
 }
 ### end death_data_to_plot_func ###
 
 ### start make_graphs_func ###
+# Description:
+# Creates a graph in a specific format for this project
 make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", standardized = FALSE) {
   # initialized to "death_" to match default arg value
   title_of_plot <- "deaths_"
@@ -161,9 +163,18 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
     title_of_plot <- paste(title_of_plot, "log", sep = "")
   }
   
-  ### start plot deaths, logarithmic ###
+  # variable y_aes that holds the column for aes(y = y_aes) in ggplot below
+  # switch used to figure out the index of the column name so it's more dynamic
+  # rather than a hard-coded index to the column name in question. Assumes the
+  # df column names are either total_deaths or total_confirmed
+  y_aes <- colnames(data_to_plot_df[grep(switch(d_or_c,
+                                                "d" = "total_deaths",
+                                                "c" = "total_confirmed"),
+                                         colnames(data_to_plot_df))])
+  
+  ### start plot ###
   df_to_plot <- data_to_plot_df %>%
-    ggplot(aes(x = date, y = total, color = Province_State)) +
+    ggplot(aes_string(x = "date", y = y_aes, color = "Province_State")) +
     geom_point() +
     scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
     geom_smooth() +
@@ -174,13 +185,13 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) + # x-axis turned 90 degrees
     scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) + # x-axis label
     geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) #+ # add a vertical line at 20 Apr 2020
-  
+
   if (lg_or_ln == "lg") {
     df_to_plot <- df_to_plot +
       scale_y_log10() # makes the y-axis on a log scale
   }
   
-  print(paste("Exporting: ", plot_title, sep = ""))
+  print(paste("Exporting: ", title_of_plot, sep = ""))
   
   print_plot(df_to_plot, title_of_plot)
 }
@@ -191,7 +202,7 @@ confirmed_data_to_plot_func <- function(confirmed_data) {
   # confirmed data for us in logarithmic and linear plots
   confirmed_data_to_plot <- confirmed_data %>%
     group_by(Province_State, date) %>%
-    summarize(total = sum(confirmed_cases))
+    summarize(total_confirmed = sum(confirmed_cases))
   
   return(confirmed_data_to_plot)
 }
@@ -258,7 +269,7 @@ make_graphs_func(death_data_to_plot, d_or_c = "d", lg_or_ln = "ln", standardized
 # create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
 deaths_per_million_data <- death_data %>%
   group_by(Province_State, date) %>%
-  summarize(total = sum(deaths / Population))
+  summarize(total_deaths = sum(total_deaths / Population))
 
 ### start deaths per million plot, log ###
 make_graphs_func(deaths_per_million_data, d_or_c = "d", lg_or_ln = "lg", standardized = TRUE)
@@ -287,7 +298,7 @@ make_graphs_func(confirmed_data_to_plot, d_or_c = "c", lg_or_ln = "ln", standard
 # create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
 confirmed_per_million_data <- confirmed_data %>%
   group_by(Province_State, date) %>%
-  summarize(total = sum(confirmed_cases / Population))
+  summarize(total_confirmed = sum(confirmed_cases / Population))
 
 ### start confirmed cases per million log plot ###
 make_graphs_func(confirmed_per_million_data, d_or_c = "c", lg_or_ln = "lg", standardized = TRUE)
@@ -309,7 +320,7 @@ death_data_to_plot <- death_data_to_plot_func(death_data_for_death_by_day)
 # create an empty list to populate with State graphs
 states_death_list <- list()
 
-deaths_bar_to_plot_full <- mutate(death_data_to_plot, deaths_delta = total - lag(total)) %>%
+deaths_bar_to_plot_full <- mutate(death_data_to_plot, deaths_delta = total_deaths - lag(total_deaths)) %>%
   filter(!is.na(deaths_delta))
 
 for (i in 1:length(unique(deaths_bar_to_plot_full$Province_State))) {
@@ -350,7 +361,7 @@ confirmed_data_to_plot <- confirmed_data_to_plot_func(confirmed_data_for_confirm
 # create an empty list to populate with State graphs
 states_confirmed_list <- list()
 
-confirmed_bar_to_plot_full <- mutate(confirmed_data_to_plot, confirmed_delta = total - lag(total)) %>%
+confirmed_bar_to_plot_full <- mutate(confirmed_data_to_plot, confirmed_delta = total_confirmed - lag(total_confirmed)) %>%
   filter(!is.na(confirmed_delta))
 
 for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
