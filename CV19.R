@@ -38,13 +38,16 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 ### print_plot ###
 # function to print plots
 print_plot <- function(plot_df, plot_title, is_state_plot = FALSE, name_of_state) {
+  # abbreviate name_of_state
+  abb_state_name <- state.abb[match(name_of_state, state.name)]
+  
   # variable to hold the Sys.Date() without dashes for use in file naming
   date_for_filenames <- str_replace_all(as.character(Sys.Date()), "-", "")
   
   # go into this IF when function is passed the by-day state graphs because
   # the filenaming is slightly different than the other graphs
   if (is_state_plot == TRUE) {
-    png(filename = paste("Graphs/", date_for_filenames, "/", "states_", name_of_state, "_", date_for_filenames,".png", sep = ""), width = 827, height = 1286, res = 125)
+    png(filename = paste("Graphs/", date_for_filenames, "/", "states_", abb_state_name, "_", date_for_filenames,".png", sep = ""), width = 827, height = 1286, res = 125)
   }
   
   # this is for all other graphs
@@ -182,6 +185,7 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
   print_plot(df_to_plot, title_of_plot)
 }
 ### end make_graphs_func ###
+
 
 confirmed_data_to_plot_func <- function(confirmed_data) {
   # confirmed data for us in logarithmic and linear plots
