@@ -16,6 +16,7 @@ library(ggpubr)
 # US csv
 deaths_us <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv"))
 confirmed_us <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))
+rt_value <- read.csv(text = getURL("https://d14wlfuexuxgcm.cloudfront.net/covid/rt.csv"))
 
 # US numbers local (uncomment this section in case GitHub isn't working, hopefully this local data is up to date!!!)
 # deaths_us <- read.csv("JHU Repo/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv")
@@ -78,11 +79,6 @@ death_func <- function(deaths_us, positions_to_remove, list_of_states, state_pop
   # merge the state_pop table with the death_data table
   death_data$Population <- state_pop$Population[match(death_data$Province_State, state_pop$Province_State)]
   
-  # create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
-  deaths_per_million_data <- death_data %>%
-    group_by(Province_State, date) %>%
-    summarize(total_deaths = sum(deaths / Population))
-  
   return(death_data)
 }
 ### end death_func ###
@@ -117,7 +113,7 @@ death_data_to_plot_func <- function(death_data) {
   # create death_data DF with State, date, and sum of deaths per State by date to be used for log and linear plots
   death_data_to_plot <- death_data %>%
     group_by(Province_State, date) %>%
-    summarize(total_deaths = sum(deaths))
+    summarize(total = sum(deaths))
   
   return(death_data_to_plot)
 }
@@ -187,6 +183,15 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
 }
 ### end make_graphs_func ###
 
+confirmed_data_to_plot_func <- function(confirmed_data) {
+  # confirmed data for us in logarithmic and linear plots
+  confirmed_data_to_plot <- confirmed_data %>%
+    group_by(Province_State, date) %>%
+    summarize(total = sum(confirmed_cases))
+  
+  return(confirmed_data_to_plot)
+}
+
 #### end functions ####
 
 #### start global variables ####
@@ -234,160 +239,45 @@ state_pop <- deaths_us %>%
 #### start deaths by state section ####
 # death_data DF to be used for death plots
 death_data <- death_func(deaths_us, positions_to_remove, list_of_primary_states, state_pop)
-#### end variables that will be used later ####
 
-### plot deaths, logarithmic ###
 death_data_to_plot <- death_data_to_plot_func(death_data)
 
+### end deaths plot, log ###
 make_graphs_func(death_data_to_plot, d_or_c = "d", lg_or_ln = "lg", standardized = FALSE)
+### end deaths plot, log ###
 
-### start plot deaths, logarithmic ###
-# deaths_log <- death_data_to_plot %>% 
-#   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
-#   geom_point() +
-#   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
-#   geom_smooth() +
-#   ggtitle("COVID-19 Deaths, [Logarithmic Scale]") +
-#   theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
-#   ylab("Total Deaths") + # name the y-axis
-#   xlab("Date") + # name the x-axis
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + # x-axis turned 90 degrees
-#   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) + # x-axis label
-#   scale_y_log10() + # makes the y-axis on a log scale
-#   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) #+ # add a vertical line at 20 Apr 2020
-# #annotate("text", x = as.Date("2020-04-20"), y = 440, label = "*", color = "Purple", size = 20) + # add a star to Texas at 20 Apr 2020
-# #annotate("text", x = as.Date("2020-04-11"), y = 15, label = "= Texas, 20 Apr 2020\n[507 Deaths]", color = "Purple", size = 5, hjust = 0) +
-# #annotate("text", x = as.Date("2020-04-10"), y = 14, label = "*", color = "Purple", size = 20)
-# 
-# print_plot(deaths_log)
-
-### end log deaths plot ###
-
-### start plot deaths, linear ###
+### start deaths plot, linear ###
 make_graphs_func(death_data_to_plot, d_or_c = "d", lg_or_ln = "ln", standardized = FALSE)
-
-# deaths_lin <- death_data_to_plot %>% 
-#   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
-#   geom_point() +
-#   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
-#   geom_smooth() +
-#   ggtitle("COVID-19 Deaths, [Linear Scale]") +
-#   theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
-#   ylab("Total Deaths") + # name the y-axis
-#   xlab("Date") + # name the x-axis
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
-#   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
-# 
-# print_plot(deaths_lin)
-
 ### end deaths plot, linear ###
 
 ### plot deaths per million, linear ###
 # create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
 deaths_per_million_data <- death_data %>%
   group_by(Province_State, date) %>%
-  summarize(total_deaths = sum(deaths / Population))
+  summarize(total = sum(deaths / Population))
 
+### start deaths per million plot, log ###
 make_graphs_func(deaths_per_million_data, d_or_c = "d", lg_or_ln = "lg", standardized = TRUE)
+### end deaths per million plot, log ###
 
-# deaths_per_million_log <- deaths_per_million_data %>% 
-#   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
-#   geom_point() +
-#   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
-#   geom_smooth() +
-#   ggtitle("COVID-19 Deaths per Million, [Log Scale]") +
-#   theme(plot.title = element_text(hjust = 0.5)) +
-#   ylab("Deaths per Million") + # name the y-axis
-#   xlab("Date") + # name the x-axis
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
-#   scale_y_log10() +
-#   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
-# 
-# #deaths_per_million_log
-# print_plot(deaths_per_million_log)
-
-### end deaths per million plot ###
-
-### plot deaths per million, linear ###
+### start deaths per million plot, linear ###
 make_graphs_func(deaths_per_million_data, d_or_c = "d", lg_or_ln = "ln", standardized = TRUE)
+### end deaths per million plot, linear ###
 
-# deaths_per_million_lin <- deaths_per_million_data %>% 
-#   ggplot(aes(x = date, y = total_deaths, color = Province_State)) +
-#   geom_point() +
-#   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
-#   geom_smooth() +
-#   ggtitle("COVID-19 Deaths per Million, [Linear Scale]") +
-#   theme(plot.title = element_text(hjust = 0.5)) +
-#   ylab("Deaths per Million") + # name the y-axis
-#   xlab("Date") + # name the x-axis
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
-#   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
-# 
-# #deaths_per_million_lin
-# print_plot(deaths_per_million_lin)
-
-### end deaths per million plot ###
 #### end deaths by state ####
 
 
 #### start confirmed cases section ####
 confirmed_data <- confirmed_func(confirmed_us, positions_to_remove, list_of_primary_states, state_pop)
 
-confirmed_data_to_plot_func <- function(confirmed_data) {
-  # confirmed data for us in logarithmic and linear plots
-  confirmed_data_to_plot <- confirmed_data %>%
-    group_by(Province_State, date) %>%
-    summarize(total = sum(confirmed_cases))
-  
-  return(confirmed_data_to_plot)
-}
-
 confirmed_data_to_plot <- confirmed_data_to_plot_func(confirmed_data)
 
+### start confirmed cases, logarithmic plot ###
 make_graphs_func(confirmed_data_to_plot, d_or_c = "c", lg_or_ln = "lg", standardized = FALSE)
-
-# ### confirmed cases, logarithmic plot ###
-# confirmed_log <- confirmed_data_to_plot %>% 
-#   ggplot(aes(x = date, y = total_cases, color = Province_State)) +
-#   geom_point() +
-#   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
-#   geom_smooth() +
-#   ggtitle("Confirmed COVID-19 Cases, [Logarithmic Scale]") +
-#   theme(plot.title = element_text(hjust = 0.5)) +
-#   ylab("Number of Confirmed Cases") + # name the y-axis
-#   xlab("Date") + # name the x-axis
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
-#   scale_y_log10() +
-#   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
-# 
-# #confirmed_log
-# print_plot(confirmed_log)
-
 ### end confirmed cases, logarithmic plot ###
 
-### confirmed cases, linear plot ###
+### start confirmed cases, linear plot ###
 make_graphs_func(confirmed_data_to_plot, d_or_c = "c", lg_or_ln = "ln", standardized = FALSE)
-
-# confirmed_lin <- confirmed_data_to_plot %>% 
-#   ggplot(aes(x = date, y = total_cases, color = Province_State)) +
-#   geom_point() +
-#   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
-#   geom_smooth() +
-#   ggtitle("Confirmed COVID-19 Cases, [Linear Scale]") +
-#   theme(plot.title = element_text(hjust = 0.5)) +
-#   ylab("Number of Confirmed Cases") + # name the y-axis
-#   xlab("Date") + # name the x-axis
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
-#   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
-# 
-# #confirmed_lin
-# print_plot(confirmed_lin)
-
 ### end confirmed cases, linear plot ###
 
 # create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
@@ -395,46 +285,14 @@ confirmed_per_million_data <- confirmed_data %>%
   group_by(Province_State, date) %>%
   summarize(total = sum(confirmed_cases / Population))
 
+### start confirmed cases per million log plot ###
 make_graphs_func(confirmed_per_million_data, d_or_c = "c", lg_or_ln = "lg", standardized = TRUE)
-
-# ### confirmed cases per million log plot ###
-# confirmed_per_million_log <- confirmed_per_million_data %>% 
-#   ggplot(aes(x = date, y = total_cases, color = Province_State)) +
-#   geom_point() +
-#   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
-#   geom_smooth() +
-#   ggtitle("COVID-19 Confirmed Cases per Million, [Log Scale]") +
-#   theme(plot.title = element_text(hjust = 0.5)) +
-#   ylab("Confirmed Cases per Million") + # name the y-axis
-#   xlab("Date") + # name the x-axis
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   scale_x_date(date_labels = "%b %d", date_breaks = "2 day", minor_breaks = NULL) +
-#   scale_y_log10() +
-#   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
-# 
-# print_plot(confirmed_per_million_log)
-
 ### end confirmed cases per million log plot ###
 
-### plot confirmed cases per million, linear ###
+### start confirmed cases per million linear plot ###
 make_graphs_func(confirmed_per_million_data, d_or_c = "c", lg_or_ln = "ln", standardized = TRUE)
-
-# confirmed_per_million_lin <- confirmed_per_million_data %>% 
-#   ggplot(aes(x = date, y = total_cases, color = Province_State)) +
-#   geom_point() +
-#   scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
-#   geom_smooth() +  ggtitle("COVID-19 Confirmed Cases per Million, [Linear Scale]") +
-#   theme(plot.title = element_text(hjust = 0.5)) +
-#   ylab("Confirmed Cases per Million") + # name the y-axis
-#   xlab("Date") + # name the x-axis
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
-#   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3)
-# 
-# #confirmed_per_million_lin
-# print_plot(confirmed_per_million_lin)
-
 ### end confirmed cases per million linear plot ###
+
 #### end confirmed cases section ####
 
 
@@ -671,16 +529,4 @@ print_plot(countries_active_log, plot_title = "countries_active_log")
 # 
 # # write the daily confirmed cases/million table to a .csv
 # write.csv(global_confirmed_summary, paste("Tables/global_confirmed_count, ", Sys.Date(), ".csv", sep = ""))
-
-
-
-
-
-
-
-# DF to be used for death plots
-
-
-
-
 
