@@ -37,9 +37,11 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 #### functions used in this script ####
 ### print_plot ###
 # function to print plots
-print_plot <- function(plot_df, plot_title, is_state_plot = FALSE, name_of_state) {
-  # abbreviate name_of_state
-  abb_state_name <- state.abb[match(name_of_state, state.name)]
+print_plot <- function(plot_df, plot_title = NULL, is_state_plot = FALSE, name_of_state = NULL) {
+  # abbreviate name_of_state if name_of_state != NULL
+  if (!is.null(name_of_state)) {
+    abb_state_name <- state.abb[match(name_of_state, state.name)]
+  }
   
   # variable to hold the Sys.Date() without dashes for use in file naming
   date_for_filenames <- str_replace_all(as.character(Sys.Date()), "-", "")
@@ -144,8 +146,6 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
     title_of_plot <- paste(title_of_plot, "per_million_", sep = "")
   }
   
-  print(paste("graph type is: ", graph_type, sep = ""))
-  
   # initialized to "Logarithmic" to match default arg value
   graph_scale <- "Logarithmic"
   
@@ -160,8 +160,6 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
   else {
     title_of_plot <- paste(title_of_plot, "log", sep = "")
   }
-  
-  print(title_of_plot)
   
   ### start plot deaths, logarithmic ###
   df_to_plot <- data_to_plot_df %>%
@@ -181,6 +179,8 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
     df_to_plot <- df_to_plot +
       scale_y_log10() # makes the y-axis on a log scale
   }
+  
+  print(paste("Exporting: ", plot_title, sep = ""))
   
   print_plot(df_to_plot, title_of_plot)
 }
@@ -389,9 +389,8 @@ for (k in 1:length(list_of_all_states)) {
   # get State's name on the plot
   current_state <- as.character(unique(states_confirmed_list[[k]]$data[1]$Province_State))
   
-  # just some indicators to show progress in the console
-  print(k)
-  print(current_state)
+  # print progress in the console
+  print(paste("Exporting #", k, ": ", current_state, sep = ""))
   
   # use ggarrange to plot the states_confirmed and states_death plots on a single plot
   daily_plot <- ggarrange(states_confirmed_list[[k]], states_death_list[[k]], ncol = 1, nrow = 2)
