@@ -39,8 +39,9 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 # function to print plots
 print_plot <- function(plot_df, plot_title = NULL, is_state_plot = FALSE, name_of_state = NULL) {
   # abbreviate name_of_state if name_of_state != NULL
+  # for use in filename for state bar graph
   if (!is.null(name_of_state)) {
-    abb_state_name <- state.abb[match(name_of_state, state.name)]
+    abb_state_name <- c(state.abb, "DC")[match(name_of_state, c(state.name, "District of Columbia"))]
   }
   
   # variable to hold the Sys.Date() without dashes for use in file naming
@@ -380,6 +381,7 @@ for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
   confirmed_bar_plot <- confirmed_bar_to_plot %>%
     ggplot(aes(x = date, y = confirmed_delta, fill = Province_State)) +
     geom_bar(stat = "identity", color = "plum") +
+    #geom_point() +
     geom_smooth(color = "blue") +
     scale_fill_manual(values = "#008080", name = "State") +
     ggtitle("COVID-19 Confirmed Cases per Day") +
@@ -387,8 +389,9 @@ for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
     xlab("Date") +
     ylab("Number of Confirmed Cases") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL)
-  
+    scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
+    geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
+    
   # add the current State bar plot into the list for use later on
   states_confirmed_list[[j]] <- confirmed_bar_plot
 }
