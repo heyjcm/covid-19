@@ -12,7 +12,7 @@ library(dplyr)
 library(ggpubr)
 #### end load libraries ####
 
-#### load csv from GitHub ####
+#### start load csv from Johns Hopkins GitHub repo ####
 # US csv
 deaths_us <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv"))
 confirmed_us <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))
@@ -32,13 +32,14 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 # world_recovered <- read.csv("JHU Repo/cage <- c(17,18,18,17,18,19,18,16,18,18)sse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
 # world_confirmed <- read.csv("JHU Repo/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 
-#### end load csv ####
+#### end load csv from Johns Hopkins GitHub repo ####
 
-#### functions used in this script ####
+
+#### start functions used in this script ####
 ### print_plot ###
 # function to print plots
 print_plot <- function(plot_df, plot_title = NULL, is_state_plot = FALSE, name_of_state = NULL) {
-  # abbreviate name_of_state if name_of_state != NULL
+  # abbreviate name_of_state if name_of_state is populated
   # for use in filename for state bar graph
   if (!is.null(name_of_state)) {
     abb_state_name <- c(state.abb, "DC")[match(name_of_state, c(state.name, "District of Columbia"))]
@@ -126,7 +127,6 @@ death_data_to_plot_func <- function(death_data) {
 ### end death_data_to_plot_func ###
 
 ### start make_graphs_func ###
-# Description:
 # Creates a graph in a specific format for this project
 make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", standardized = FALSE) {
   # initialized to "death_" to match default arg value
@@ -208,7 +208,8 @@ confirmed_data_to_plot_func <- function(confirmed_data) {
   return(confirmed_data_to_plot)
 }
 
-#### end functions ####
+#### end functions used in this script ####
+
 
 #### start global variables ####
 # primary States that I'm specifically tracking in the main graphs
@@ -252,10 +253,9 @@ state_pop <- deaths_us %>%
 #### end global variables ####
 
 
-#### start deaths by state section ####
-# death_data DF to be used for death plots
+#### start deaths by state graphs section ####
+# build DF needed for deaths plots
 death_data <- death_func(deaths_us, positions_to_remove, list_of_primary_states, state_pop)
-
 death_data_to_plot <- death_data_to_plot_func(death_data)
 
 ### end deaths plot, log ###
@@ -280,12 +280,12 @@ make_graphs_func(deaths_per_million_data, d_or_c = "d", lg_or_ln = "lg", standar
 make_graphs_func(deaths_per_million_data, d_or_c = "d", lg_or_ln = "ln", standardized = TRUE)
 ### end deaths per million plot, linear ###
 
-#### end deaths by state ####
+#### end deaths by state graphs section ####
 
 
 #### start confirmed cases section ####
+# build DF needed for confirmed cases plots
 confirmed_data <- confirmed_func(confirmed_us, positions_to_remove, list_of_primary_states, state_pop)
-
 confirmed_data_to_plot <- confirmed_data_to_plot_func(confirmed_data)
 
 ### start confirmed cases, logarithmic plot ###
@@ -312,7 +312,7 @@ make_graphs_func(confirmed_per_million_data, d_or_c = "c", lg_or_ln = "ln", stan
 #### end confirmed cases section ####
 
 
-#### start deaths and confirmed cases per day State bar graphs ####
+#### start deaths and confirmed cases per day by State bar graphs ####
 ### start deaths by day graphs ###
 # create new DF with all the states death in it
 death_data_for_death_by_day <- death_func(deaths_us, positions_to_remove, list_of_all_states, state_pop)
@@ -414,7 +414,7 @@ for (k in 1:length(list_of_all_states)) {
   
 }
 ### end loop to export States section ###
-#### end deaths and confirmed cases per day State bar graphs ####
+#### end deaths and confirmed cases per day by State bar graphs ####
 
 
 #### start countries graph section ####
@@ -430,6 +430,8 @@ countries <- c("US",
                "Chile",
                "New Zealand")
 
+# colors to use for each country (countries will show up in alphabetical order
+# and the first country will be red, second is orange, and so on)
 countries_colors <- c("red",
                       "orange",
                       "chocolate",
@@ -513,10 +515,83 @@ print_plot(countries_active_log, plot_title = "countries_active_log")
 
 
 
+#### start experimental section ####
+
+US_confirmed_data <- global_confirmed_data %>% filter(Country.Region == "US")
+US_confirmed_bar_to_plot <- mutate(US_confirmed_data, US_confirmed_delta = global_confirmed_data - lag(global_confirmed_data)) %>%
+  filter(!is.na(US_confirmed_delta))
+
+# plot the confirmed per day
+US_confirmed_bar_plot <- US_confirmed_bar_to_plot %>%
+  ggplot(aes(x = date, y = US_confirmed_delta, fill = Country.Region)) +
+  geom_bar(stat = "identity", color = "plum") +
+  #geom_point() +
+  geom_smooth(color = "blue") +
+  scale_fill_manual(values = "#008080", name = "Country") +
+  ggtitle("COVID-19 Confirmed Cases per Day") +
+  theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
+  xlab("Date") +
+  ylab("Number of Confirmed Cases") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
+
+#US_confirmed_bar_plot
+
+
+US_death_data <- global_death_data %>% filter(Country.Region == "US")
+US_deaths_bar_to_plot <- mutate(US_death_data, US_deaths_delta = global_deaths - lag(global_deaths)) %>%
+  filter(!is.na(US_deaths_delta))
+
+# plot the deaths per day
+US_deaths_bar_plot <- US_deaths_bar_to_plot %>%
+  ggplot(aes(x = date, y = US_deaths_delta, fill = Country.Region)) +
+  geom_bar(stat = "identity", color = "blue") +
+  geom_smooth(color = "blue") +
+  scale_fill_manual(values = "orange", name = "Country") +
+  ggtitle("COVID-19 Deaths per Day") +
+  theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
+  xlab("Date") +
+  ylab("Number of Deaths") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL)
+
+#US_deaths_bar_plot
+
+US_daily_plot <- ggarrange(US_confirmed_bar_plot, US_deaths_bar_plot, ncol = 1, nrow = 2)
+print_plot(US_daily_plot, plot_title = "US_daily")
+
+
+
+
+
+US_active_data <- global_active_df %>% filter(Country.Region == "US")
+US_active_bar_to_plot <- mutate(US_active_data, US_active_delta = global_active - lag(global_active)) %>%
+  filter(!is.na(US_active_delta))
+
+US_active_bar_plot <- US_active_bar_to_plot %>%
+  ggplot(aes(x = date, y = US_active_delta, fill = Country.Region)) +
+  geom_bar(stat = "identity", color = "blue") +
+  geom_smooth(color = "green") +
+  scale_fill_manual(values = "turquoise", name = "Country") +
+  ggtitle("COVID-19 Net New Active per Day") +
+  theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
+  xlab("Date") +
+  ylab("Net New Active Cases") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL)
+
+US_active_bar_plot
+
+#### end test section ####
+
+
+
+
 
 #### write tables ####
-# note: this section deprecated, but wanted to keep this in case I
-# want to reuse it one day
+# note: this section removed from use, but wanted to keep this in case I
+# want to use it again one day
 # # calculate deaths per million aggregated to yesterday's date
 # deaths_per_million_aggregated <- death_data %>%
 #   group_by(Province_State, date) %>%
