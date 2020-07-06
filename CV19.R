@@ -38,7 +38,7 @@ world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSS
 #### start functions used in this script ####
 ### print_plot ###
 # function to print plots
-print_plot <- function(plot_df, plot_title = NULL, is_state_plot = FALSE, name_of_state = NULL) {
+print_plot <- function(plot_df, plot_title = NULL, is_state_plot = FALSE, name_of_state = NULL, pl_width = 827, pl_height = 1286, pl_res = 125) {
   # abbreviate name_of_state if name_of_state is populated
   # for use in filename for state bar graph
   if (!is.null(name_of_state)) {
@@ -51,13 +51,13 @@ print_plot <- function(plot_df, plot_title = NULL, is_state_plot = FALSE, name_o
   # go into this IF when function is passed the by-day state graphs because
   # the filenaming is slightly different than the other graphs
   if (is_state_plot == TRUE) {
-    png(filename = paste("Graphs/", date_for_filenames, "/", "states_", abb_state_name, "_", date_for_filenames,".png", sep = ""), width = 827, height = 1286, res = 125)
+    png(filename = paste("Graphs/", date_for_filenames, "/", "states_", abb_state_name, "_", date_for_filenames,".png", sep = ""), width = pl_width, height = pl_height, res = pl_res)
   }
   
   # this is for all other graphs
   else {
     # use the plot_title variable as part of the filename
-    png(filename = paste("Graphs/", date_for_filenames, "/", plot_title, "_", date_for_filenames,".png", sep = ""), width = 827, height = 643, res = 97)
+    png(filename = paste("Graphs/", date_for_filenames, "/", plot_title, "_", date_for_filenames,".png", sep = ""),  width = pl_width, height = pl_height, res = pl_res)
   }
   
   # export the plot from the png() function above
@@ -194,7 +194,7 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
   
   print(paste("Exporting: ", title_of_plot, sep = ""))
   
-  print_plot(df_to_plot, title_of_plot)
+  print_plot(df_to_plot, title_of_plot,  pl_height = 643, pl_res = 97)
 }
 ### end make_graphs_func ###
 
@@ -340,7 +340,6 @@ for (i in 1:length(unique(deaths_bar_to_plot_full$Province_State))) {
   deaths_bar_plot <- deaths_bar_to_plot %>%
     ggplot(aes(x = date, y = deaths_delta, fill = Province_State)) +
     geom_bar(stat = "identity", color = "blue") +
-    #geom_point() +
     geom_smooth(color = "green") +
     scale_fill_manual(values = "turquoise", name = "State") +
     ggtitle("COVID-19 Deaths per Day") +
@@ -506,26 +505,38 @@ countries_active_log <- global_active_df %>%
   annotate("text", x = as.Date("2020-01-27"), y = 450000, label = "= US 20 Apr: 669,903 Active Cases", color = "Purple", size = 5, hjust = 0) +
   annotate("text", x = as.Date("2020-01-27"), y = 200000, label = paste("   US Today: ", format(US_active_today$global_active, big.mark = ",", scientific = FALSE), " Active Cases", sep = ""), color = "Purple", size = 5, hjust = 0)
 
-print_plot(countries_active_log, plot_title = "countries_active_log")
+print_plot(countries_active_log, plot_title = "countries_active_log", pl_height = 643, pl_res = 97)
 
 #### end countries graph section ####
 
+#### start US daily active, confirmed, and deaths section ####
 
+# plot the US active per day
+US_active_data <- global_active_df %>% filter(Country.Region == "US")
+US_active_bar_to_plot <- mutate(US_active_data, US_active_delta = global_active - lag(global_active)) %>%
+  filter(!is.na(US_active_delta))
 
+US_active_bar_plot <- US_active_bar_to_plot %>%
+  ggplot(aes(x = date, y = US_active_delta, fill = Country.Region)) +
+  geom_bar(stat = "identity", color = "purple") +
+  geom_smooth(color = "green") +
+  scale_fill_manual(values = "turquoise", name = "Country") +
+  ggtitle("COVID-19 Net New Active per Day") +
+  theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
+  xlab("Date") +
+  ylab("Net New Active Cases") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
 
-
-
-#### start experimental section ####
-
+# plot the US confirmed per day
 US_confirmed_data <- global_confirmed_data %>% filter(Country.Region == "US")
 US_confirmed_bar_to_plot <- mutate(US_confirmed_data, US_confirmed_delta = global_confirmed_data - lag(global_confirmed_data)) %>%
   filter(!is.na(US_confirmed_delta))
 
-# plot the confirmed per day
 US_confirmed_bar_plot <- US_confirmed_bar_to_plot %>%
   ggplot(aes(x = date, y = US_confirmed_delta, fill = Country.Region)) +
   geom_bar(stat = "identity", color = "plum") +
-  #geom_point() +
   geom_smooth(color = "blue") +
   scale_fill_manual(values = "#008080", name = "Country") +
   ggtitle("COVID-19 Confirmed Cases per Day") +
@@ -536,14 +547,11 @@ US_confirmed_bar_plot <- US_confirmed_bar_to_plot %>%
   scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
   geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
 
-#US_confirmed_bar_plot
-
-
+# plot the US deaths per day
 US_death_data <- global_death_data %>% filter(Country.Region == "US")
 US_deaths_bar_to_plot <- mutate(US_death_data, US_deaths_delta = global_deaths - lag(global_deaths)) %>%
   filter(!is.na(US_deaths_delta))
 
-# plot the deaths per day
 US_deaths_bar_plot <- US_deaths_bar_to_plot %>%
   ggplot(aes(x = date, y = US_deaths_delta, fill = Country.Region)) +
   geom_bar(stat = "identity", color = "blue") +
@@ -554,36 +562,14 @@ US_deaths_bar_plot <- US_deaths_bar_to_plot %>%
   xlab("Date") +
   ylab("Number of Deaths") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL)
+  scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
+  geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
 
-#US_deaths_bar_plot
+# print three plots on one graph
+US_daily_plot <- ggarrange(US_active_bar_plot, US_confirmed_bar_plot, US_deaths_bar_plot, ncol = 1, nrow = 3)
+print_plot(US_daily_plot, plot_title = "US_daily", pl_width = 827, pl_height = 1286, pl_res = 97)
 
-US_daily_plot <- ggarrange(US_confirmed_bar_plot, US_deaths_bar_plot, ncol = 1, nrow = 2)
-print_plot(US_daily_plot, plot_title = "US_daily")
-
-
-
-
-
-US_active_data <- global_active_df %>% filter(Country.Region == "US")
-US_active_bar_to_plot <- mutate(US_active_data, US_active_delta = global_active - lag(global_active)) %>%
-  filter(!is.na(US_active_delta))
-
-US_active_bar_plot <- US_active_bar_to_plot %>%
-  ggplot(aes(x = date, y = US_active_delta, fill = Country.Region)) +
-  geom_bar(stat = "identity", color = "blue") +
-  geom_smooth(color = "green") +
-  scale_fill_manual(values = "turquoise", name = "Country") +
-  ggtitle("COVID-19 Net New Active per Day") +
-  theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
-  xlab("Date") +
-  ylab("Net New Active Cases") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL)
-
-US_active_bar_plot
-
-#### end test section ####
+#### end US daily active, confirmed, and deaths section ####
 
 
 
