@@ -504,7 +504,7 @@ countries_active_log <- global_active_df %>%
   annotate("text", x = as.Date("2020-01-24"), y = 300000, label = "*", color = "purple", size = 18) + # * on note
   annotate("text", x = as.Date("2020-01-27"), y = 450000, label = "= US 20 Apr: 669,903 Active Cases", color = "Purple", size = 5, hjust = 0) +
   annotate("text", x = as.Date("2020-01-27"), y = 200000, label = paste("   US Today: ", format(US_active_today$global_active, big.mark = ",", scientific = FALSE), " Active Cases", sep = ""), color = "Purple", size = 5, hjust = 0)
-
+countries_active_log
 print_plot(countries_active_log, plot_title = "countries_active_log", pl_height = 643, pl_res = 97)
 
 #### end countries graph section ####
@@ -607,4 +607,82 @@ print_plot(US_daily_plot, plot_title = "US_daily", pl_width = 827, pl_height = 1
 # 
 # # write the daily confirmed cases/million table to a .csv
 # write.csv(global_confirmed_summary, paste("Tables/global_confirmed_count, ", Sys.Date(), ".csv", sep = ""))
+
+
+
+
+
+
+
+
+
+
+#### start test section for hospitalization ####
+
+# read in first file in the folder
+daily_US <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/04-12-2020.csv"))
+
+# columns in daily_US to remove
+positions_to_remove_daily_US <- c(2, 4, 5, 10, 11, 14:18)
+daily_US_df <- daily_US %>%
+  select(-positions_to_remove_daily_US)
+
+# change the Last_Update date to 2020-04-12
+daily_US_df$Last_Update <- as.Date("2020-04-12")
+
+
+# loop through to read each CSV from JHU "csse_covid_19_daily_reports_us" folder and then rbind() each to daily_US_df to get entire data set in one DF
+# start with the second file in the folder since first file was already entered above
+start_date <- as.Date("13-04-2014", format = "%d-%m-%y")
+
+# end date is today's date (Sys.Date) - 1 because JHU is always a day behind
+end_date <- as.Date(Sys.Date() - 1, format = "%d-%m-%y")
+
+# copy start_date var to use in loop
+theDate <- start_date
+
+#loop while theDate in question is less than the end_date var
+while (theDate <= end_date) {
+  # URL created using current theDate in loop
+  myURL <- paste("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/", format(theDate,"%m-%d-%Y"), ".csv", sep = "")
+  print(myURL)
+  
+  # read in theDate CSV
+  daily_US <- read.csv(text = getURL(myURL))
+  
+  # keep the columns of value
+  daily_US <- daily_US %>%
+    select(-positions_to_remove_daily_US)
+  
+  daily_US$Last_Update <- as.Date(theDate)
+  
+  # rbind() to existing daily_US_df
+  daily_US_df <- rbind(daily_US_df, daily_US)
+  
+  # increment theDate to the next date
+  theDate <- theDate + 1
+}
+
+# rename the Last_Update column to date (more intuitive)
+daily_US_df <- rename(daily_US_df, date = Last_Update, total_deaths = Deaths, total_confirmed = Confirmed, total_recovered = Recovered, total_active = Active, total_tested = People_Tested, total_hospitalized = People_Hospitalized)
+
+
+states_death2 <- daily_US_df %>%
+  group_by(Province_State) %>%
+  filter(Province_State %in% list_of_all_states)
+
+# massage the data formatting
+date_columns <- colnames(states_death[, 3:ncol(states_death)]) # date_columns to be used in melt function below
+death_data <- reshape2::melt(states_death, id.vars = "Province_State", measure.vars = date_columns) # making a new DF using the melt function to have one row for each date with corresponding deaths on that day
+death_data$variable <- str_replace(death_data$variable, "X", "") # just removing the 'X' from the column
+death_data$variable <- mdy(death_data$variable) # change to month/day/year format
+death_data <- rename(death_data, date = variable, total_deaths = value) # rename column names for use later
+
+# merge the state_pop table with the death_data table
+death_data$Population <- state_pop$Population[match(death_data$Province_State, state_pop$Province_State)]
+  
+
+
+
+#### end test section for hospitalization ####
 
