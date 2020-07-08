@@ -347,7 +347,7 @@ for (i in 1:length(unique(deaths_bar_to_plot_full$Province_State))) {
     xlab("Date") +
     ylab("Number of Deaths") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL)
+    scale_x_date(date_labels = "%b %d", date_breaks = "3 days", minor_breaks = NULL)
 
   # add the current State bar plot into the list for use later on
   states_death_list[[i]] <- deaths_bar_plot
@@ -388,15 +388,125 @@ for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
     xlab("Date") +
     ylab("Number of Confirmed Cases") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) +
+    scale_x_date(date_labels = "%b %d", date_breaks = "3 days", minor_breaks = NULL) +
     geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
     
   # add the current State bar plot into the list for use later on
   states_confirmed_list[[j]] <- confirmed_bar_plot
 }
 ### end confirmed per day section ###
+#### end deaths and confirmed cases per day by State bar graphs ####
 
-### start loop to export States section ###
+#### start section for hospitalization ####
+
+# read in first file in the folder
+daily_US <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/04-12-2020.csv"))
+
+# columns in daily_US to remove
+positions_to_remove_daily_US <- c(2, 4, 5, 10, 11, 14:18)
+daily_US_df <- daily_US %>%
+  select(-positions_to_remove_daily_US)
+
+# change the Last_Update date to 2020-04-12
+daily_US_df$Last_Update <- as.Date("2020-04-12")
+
+# loop through to read each CSV from JHU "csse_covid_19_daily_reports_us" folder and then rbind() each to daily_US_df to get entire data set in one DF
+# start with the second file in the folder since first file was already entered above
+start_date <- as.Date("13-04-2014", format = "%d-%m-%y")
+
+# end date is today's date (Sys.Date) - 1 because JHU is always a day behind
+end_date <- as.Date(Sys.Date() - 1, format = "%d-%m-%y")
+
+# copy start_date var to use in loop
+theDate <- start_date
+
+#loop while theDate in question is less than the end_date var
+while (theDate <= end_date) {
+  # URL created using current theDate in loop
+  myURL <- paste("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/", format(theDate,"%m-%d-%Y"), ".csv", sep = "")
+  print(myURL)
+  
+  # read in theDate CSV
+  daily_US <- read.csv(text = getURL(myURL))
+  
+  # keep the columns that I want to keep
+  daily_US <- daily_US %>%
+    select(-positions_to_remove_daily_US)
+  
+  # make the Last_Update column a date using current theDate value
+  daily_US$Last_Update <- as.Date(theDate)
+  
+  # rbind() to existing daily_US_df
+  daily_US_df <- rbind(daily_US_df, daily_US)
+  
+  # increment theDate to the next date
+  theDate <- theDate + 1
+}
+
+# rename the Last_Update column to date (more intuitive)
+daily_US_df <- rename(daily_US_df, date = Last_Update, total_deaths = Deaths, total_confirmed = Confirmed, total_recovered = Recovered, total_active = Active, total_tested = People_Tested, total_hospitalized = People_Hospitalized)
+
+# re-order daily_US_df by Province_State
+daily_US_df <- daily_US_df[order(daily_US_df$Province_State),]
+
+# daily_US_bar_deaths_to_plot_full <- subset(mutate(daily_US_df, deaths_delta = total_deaths - lag(total_deaths)),
+#                                            select = -c(total_confirmed, total_recovered, total_active, total_tested, total_hospitalized))
+# 
+# daily_US_bar_confirmed_to_plot_full <- subset(mutate(daily_US_df, confirmed_delta = total_confirmed - lag(total_confirmed)),
+#                                               select = -c(total_deaths, total_recovered, total_active, total_tested, total_hospitalized))
+# 
+# daily_US_bar_tested_to_plot_full <- subset(mutate(daily_US_df, tested_delta = total_tested - lag(total_tested)),
+#                                                  select = -c(total_deaths, total_confirmed, total_recovered, total_active, total_hospitalized))
+
+# create an empty list to populate with State graphs
+states_hospitalized_list <- list()
+
+daily_US_bar_hospitalized_to_plot_full <- subset(mutate(daily_US_df, hospitalized_delta = total_hospitalized - lag(total_hospitalized)),
+                                                 select = -c(total_deaths, total_confirmed, total_recovered, total_active, total_tested))
+
+states_hospitalized <- daily_US_bar_hospitalized_to_plot_full %>%
+  group_by(Province_State) %>%
+  filter(Province_State %in% list_of_all_states)
+
+states_hospitalized[is.na(states_hospitalized)] <- 0
+
+# confirmed_bar_to_plot_full <- mutate(confirmed_data_to_plot, confirmed_delta = total_confirmed - lag(total_confirmed)) %>%
+#   filter(!is.na(confirmed_delta))
+
+for (a in 1:length(unique(states_hospitalized$Province_State))) {
+  # set var to the current State name
+  var = unique(states_hospitalized$Province_State)[a]
+  
+  # just some indicators to show progress in the console
+  # comment out if not wanted
+  print(a)
+  print(var)
+  
+  hospitalized_bar_to_plot <- states_hospitalized %>%
+    filter(Province_State == var)
+  
+  # plot the confirmed per day
+  hospitalized_bar_plot <- hospitalized_bar_to_plot %>%
+    ggplot(aes(x = date, y = hospitalized_delta, fill = Province_State)) +
+    geom_bar(stat = "identity", color = "plum") +
+    geom_smooth(color = "blue") +
+    scale_fill_manual(values = "#008080", name = "State") +
+    ggtitle("COVID-19 Hospitalized per Day") +
+    theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
+    xlab("Date") +
+    ylab("Total Hospitalized") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_x_date(date_labels = "%b %d", date_breaks = "3 days", minor_breaks = NULL) +
+    geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
+  
+  # add the current State bar plot into the list for use later on
+  states_hospitalized_list[[a]] <- hospitalized_bar_plot
+}
+
+#### end section for hospitalization ####
+
+
+#### start loop to export States section ####
 # loop to export states' confirmed/deaths by day plots
 for (k in 1:length(list_of_all_states)) {
   # get State's name on the plot
@@ -406,14 +516,12 @@ for (k in 1:length(list_of_all_states)) {
   print(paste("Exporting #", k, ": ", current_state, sep = ""))
   
   # use ggarrange to plot the states_confirmed and states_death plots on a single plot
-  daily_plot <- ggarrange(states_confirmed_list[[k]], states_death_list[[k]], ncol = 1, nrow = 2)
+  daily_plot <- ggarrange(states_confirmed_list[[k]], states_hospitalized_list[[k]], states_death_list[[k]], ncol = 1, nrow = 3)
   
   #export plot to png
   print_plot(daily_plot, is_state_plot = TRUE, name_of_state = current_state)
-  
 }
-### end loop to export States section ###
-#### end deaths and confirmed cases per day by State bar graphs ####
+#### end loop to export States section ####
 
 
 #### start countries graph section ####
@@ -504,7 +612,7 @@ countries_active_log <- global_active_df %>%
   annotate("text", x = as.Date("2020-01-24"), y = 300000, label = "*", color = "purple", size = 18) + # * on note
   annotate("text", x = as.Date("2020-01-27"), y = 450000, label = "= US 20 Apr: 669,903 Active Cases", color = "Purple", size = 5, hjust = 0) +
   annotate("text", x = as.Date("2020-01-27"), y = 200000, label = paste("   US Today: ", format(US_active_today$global_active, big.mark = ",", scientific = FALSE), " Active Cases", sep = ""), color = "Purple", size = 5, hjust = 0)
-countries_active_log
+
 print_plot(countries_active_log, plot_title = "countries_active_log", pl_height = 643, pl_res = 97)
 
 #### end countries graph section ####
@@ -614,75 +722,4 @@ print_plot(US_daily_plot, plot_title = "US_daily", pl_width = 827, pl_height = 1
 
 
 
-
-
-
-#### start test section for hospitalization ####
-
-# read in first file in the folder
-daily_US <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/04-12-2020.csv"))
-
-# columns in daily_US to remove
-positions_to_remove_daily_US <- c(2, 4, 5, 10, 11, 14:18)
-daily_US_df <- daily_US %>%
-  select(-positions_to_remove_daily_US)
-
-# change the Last_Update date to 2020-04-12
-daily_US_df$Last_Update <- as.Date("2020-04-12")
-
-
-# loop through to read each CSV from JHU "csse_covid_19_daily_reports_us" folder and then rbind() each to daily_US_df to get entire data set in one DF
-# start with the second file in the folder since first file was already entered above
-start_date <- as.Date("13-04-2014", format = "%d-%m-%y")
-
-# end date is today's date (Sys.Date) - 1 because JHU is always a day behind
-end_date <- as.Date(Sys.Date() - 1, format = "%d-%m-%y")
-
-# copy start_date var to use in loop
-theDate <- start_date
-
-#loop while theDate in question is less than the end_date var
-while (theDate <= end_date) {
-  # URL created using current theDate in loop
-  myURL <- paste("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports_us/", format(theDate,"%m-%d-%Y"), ".csv", sep = "")
-  print(myURL)
-  
-  # read in theDate CSV
-  daily_US <- read.csv(text = getURL(myURL))
-  
-  # keep the columns of value
-  daily_US <- daily_US %>%
-    select(-positions_to_remove_daily_US)
-  
-  daily_US$Last_Update <- as.Date(theDate)
-  
-  # rbind() to existing daily_US_df
-  daily_US_df <- rbind(daily_US_df, daily_US)
-  
-  # increment theDate to the next date
-  theDate <- theDate + 1
-}
-
-# rename the Last_Update column to date (more intuitive)
-daily_US_df <- rename(daily_US_df, date = Last_Update, total_deaths = Deaths, total_confirmed = Confirmed, total_recovered = Recovered, total_active = Active, total_tested = People_Tested, total_hospitalized = People_Hospitalized)
-
-
-states_death2 <- daily_US_df %>%
-  group_by(Province_State) %>%
-  filter(Province_State %in% list_of_all_states)
-
-# massage the data formatting
-date_columns <- colnames(states_death[, 3:ncol(states_death)]) # date_columns to be used in melt function below
-death_data <- reshape2::melt(states_death, id.vars = "Province_State", measure.vars = date_columns) # making a new DF using the melt function to have one row for each date with corresponding deaths on that day
-death_data$variable <- str_replace(death_data$variable, "X", "") # just removing the 'X' from the column
-death_data$variable <- mdy(death_data$variable) # change to month/day/year format
-death_data <- rename(death_data, date = variable, total_deaths = value) # rename column names for use later
-
-# merge the state_pop table with the death_data table
-death_data$Population <- state_pop$Population[match(death_data$Province_State, state_pop$Province_State)]
-  
-
-
-
-#### end test section for hospitalization ####
 
