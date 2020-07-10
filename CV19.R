@@ -488,8 +488,8 @@ for (a in 1:length(unique(states_hospitalized$Province_State))) {
   # plot the confirmed per day
   hospitalized_bar_plot <- hospitalized_bar_to_plot %>%
     ggplot(aes(x = date, y = hospitalized_delta, fill = Province_State)) +
-    geom_bar(stat = "identity", color = "plum") +
-    geom_smooth(color = "blue") +
+    geom_bar(stat = "identity", color = "pink") +
+    geom_smooth(color = "orange") +
     scale_fill_manual(values = "#008080", name = "State") +
     ggtitle("COVID-19 Hospitalized per Day") +
     theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
@@ -521,7 +521,7 @@ for (k in 1:length(list_of_all_states)) {
   #export plot to png
   print_plot(daily_plot, is_state_plot = TRUE, name_of_state = current_state)
 }
-#### end loop to export States section ####
+  #### end loop to export States section ####
 
 
 #### start countries graph section ####
