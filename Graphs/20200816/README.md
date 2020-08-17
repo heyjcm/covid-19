@@ -31,7 +31,7 @@ Looking at the US Daily graphs, it seems that the rise in confirmed cases a few 
 
 <b>Global Trends:</b>
 
-Since last week:
+Since last week:<br>
 Countries whose active cases have increased: Germany, South Korea, Philippines, US.<br>
 Countries whose active cases have remained about the same: Chile, Italy, Japan, New Zealand, Sweden.<br>
 Countries whose active cases have decreased: Argentina.
