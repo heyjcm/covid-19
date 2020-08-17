@@ -22,9 +22,9 @@ Please let me know if you have any requests!
 
 <b>US Daily Trends Analysis:</b>
 
-US active cases today: 3,373,157
-US active cases last week: 3,192,385
-US active cases delta (today - last week): 180,772
+US active cases today: 3,373,157<br>
+US active cases last week: 3,192,385<br>
+US active cases delta (today - last week): 180,772<br>
 US active cases percent delta: +5.4% in 7 days
 
 Looking at the US Daily graphs, it seems that the rise in confirmed cases a few weeks ago is now translating to a rise in deaths. However, the good news is that the confirmed cases has been going down in the past couple of weeks which should result in a lower death rate in a few weeks.
@@ -32,6 +32,6 @@ Looking at the US Daily graphs, it seems that the rise in confirmed cases a few 
 <b>Global Trends:</b>
 
 Since last week:
-Countries whose active cases have increased: Germany, South Korea, Philippines, US.
-Countries whose active cases have remained about the same: Chile, Italy, Japan, New Zealand, Sweden.
+Countries whose active cases have increased: Germany, South Korea, Philippines, US.<br>
+Countries whose active cases have remained about the same: Chile, Italy, Japan, New Zealand, Sweden.<br>
 Countries whose active cases have decreased: Argentina.
