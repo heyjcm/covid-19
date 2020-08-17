@@ -16,7 +16,7 @@ This weekend, we went camping in Wyoming in the Medicine Bow National Forest. I 
 
 In other news, states that once had an alarming spike in cases (e.g. AZ, CA, FL, GA, TX, NC, and others) are now starting to settle back down. This is likely explained by those states' governors re-tightening their policies around COVID. Here in Colorado, our governor did the same a little sooner than those states I previously mentioned and the same downward trend can be seen.
 
-If I didn't post your favorite state, just let me know because I have them all, I just don't post them all. Or you can go to the link to my repo here and find your state: https://github.com/heyjcm/covid-19/tree/master/Graphs/20200809
+If I didn't post your favorite state, just let me know because I have them all, I just don't post them all. Or you can go to the link to my repo here and find your state: https://github.com/heyjcm/covid-19/tree/master/Graphs/20200816
 
 Please let me know if you have any requests!
 
