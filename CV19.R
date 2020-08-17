@@ -347,7 +347,7 @@ for (i in 1:length(unique(deaths_bar_to_plot_full$Province_State))) {
     xlab("Date") +
     ylab("Number of Deaths") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    scale_x_date(date_labels = "%b %d", date_breaks = "3 days", minor_breaks = NULL)
+    scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL)
 
   # add the current State bar plot into the list for use later on
   states_death_list[[i]] <- deaths_bar_plot
@@ -388,7 +388,7 @@ for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
     xlab("Date") +
     ylab("Number of Confirmed Cases") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    scale_x_date(date_labels = "%b %d", date_breaks = "3 days", minor_breaks = NULL) +
+    scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
     geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
     
   # add the current State bar plot into the list for use later on
@@ -496,7 +496,7 @@ for (a in 1:length(unique(states_hospitalized$Province_State))) {
     xlab("Date") +
     ylab("Total Hospitalized") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    scale_x_date(date_labels = "%b %d", date_breaks = "3 days", minor_breaks = NULL) +
+    scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
     geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
   
   # add the current State bar plot into the list for use later on
@@ -605,7 +605,7 @@ countries_active_log <- global_active_df %>%
   ylab("Active Cases") + # name the y-axis
   xlab("Date") + # name the x-axis
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "3 days", minor_breaks = NULL) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x), labels = trans_format("log10", math_format(10^.x))) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) +
   annotate("text", x = as.Date("2020-04-20"), y = 450000, label = "*", color = "Purple", size = 18) + # * on line
