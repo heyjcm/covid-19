@@ -389,7 +389,7 @@ for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
     ylab("Number of Confirmed Cases") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
-    geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
+    geom_vline(xintercept = as.numeric(as.Date("2020-07-14")), linetype=3)
     
   # add the current State bar plot into the list for use later on
   states_confirmed_list[[j]] <- confirmed_bar_plot
@@ -497,7 +497,7 @@ for (a in 1:length(unique(states_hospitalized$Province_State))) {
     ylab("Total Hospitalized") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
-    geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
+    geom_vline(xintercept = as.numeric(as.Date("2020-07-14")), linetype=3)
   
   # add the current State bar plot into the list for use later on
   states_hospitalized_list[[a]] <- hospitalized_bar_plot
@@ -635,7 +635,7 @@ US_active_bar_plot <- US_active_bar_to_plot %>%
   ylab("Net New Active Cases") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
-  geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
+  geom_vline(xintercept = as.numeric(as.Date("2020-07-14")), linetype=3)
 
 # plot the US confirmed per day
 US_confirmed_data <- global_confirmed_data %>% filter(Country.Region == "US")
@@ -653,7 +653,7 @@ US_confirmed_bar_plot <- US_confirmed_bar_to_plot %>%
   ylab("Number of Confirmed Cases") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
-  geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
+  geom_vline(xintercept = as.numeric(as.Date("2020-07-14")), linetype=3)
 
 # plot the US deaths per day
 US_death_data <- global_death_data %>% filter(Country.Region == "US")
@@ -671,7 +671,7 @@ US_deaths_bar_plot <- US_deaths_bar_to_plot %>%
   ylab("Number of Deaths") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
-  geom_vline(xintercept = as.numeric(as.Date("2020-05-28")), linetype=3)
+  geom_vline(xintercept = as.numeric(as.Date("2020-07-14")), linetype=3)
 
 # print three plots on one graph
 US_daily_plot <- ggarrange(US_active_bar_plot, US_confirmed_bar_plot, US_deaths_bar_plot, ncol = 1, nrow = 3)
@@ -679,8 +679,12 @@ print_plot(US_daily_plot, plot_title = "US_daily", pl_width = 827, pl_height = 1
 
 #### end US daily active, confirmed, and deaths section ####
 
+#### Summary variables ####
 
-
+sum_US_confirmed <- global_confirmed_data %>% filter(Country.Region == "US", date == Sys.Date())
+sum_US_deaths <- global_deaths_data %>% filter(Country.Region == "US", date == Sys.Date())
+sum_US_recovered <- global_recovered_data %>% filter(Country.Region == "US", date == Sys.Date())
+#### end Summary variables ####
 
 
 #### write tables ####
