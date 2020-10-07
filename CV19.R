@@ -186,7 +186,7 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) + # x-axis turned 90 degrees
     scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) + # x-axis label
     geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) #+ # add a vertical line at 20 Apr 2020
-
+  
   if (lg_or_ln == "lg") {
     df_to_plot <- df_to_plot +
       scale_y_log10() # makes the y-axis on a log scale
@@ -214,15 +214,15 @@ confirmed_data_to_plot_func <- function(confirmed_data) {
 #### start global variables ####
 # primary States that I'm specifically tracking in the main graphs
 list_of_primary_states <- c("Colorado",
-               "Texas",
-               "California",
-               "Illinois",
-               "Georgia",
-               "Florida",
-               "Virginia",
-               "Michigan",
-               "Arizona",
-               "Wisconsin")
+                            "Texas",
+                            "California",
+                            "Illinois",
+                            "Georgia",
+                            "Florida",
+                            "Virginia",
+                            "Michigan",
+                            "Arizona",
+                            "Wisconsin")
 
 # colors for the primary States graphs
 state_colors <- c("red",
@@ -348,7 +348,7 @@ for (i in 1:length(unique(deaths_bar_to_plot_full$Province_State))) {
     ylab("Number of Deaths") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL)
-
+  
   # add the current State bar plot into the list for use later on
   states_death_list[[i]] <- deaths_bar_plot
 }
@@ -390,7 +390,7 @@ for (j in 1:length(unique(confirmed_bar_to_plot_full$Province_State))) {
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) +
     geom_vline(xintercept = as.numeric(as.Date("2020-07-14")), linetype=3)
-    
+  
   # add the current State bar plot into the list for use later on
   states_confirmed_list[[j]] <- confirmed_bar_plot
 }
@@ -521,7 +521,7 @@ for (k in 1:length(list_of_all_states)) {
   #export plot to png
   print_plot(daily_plot, is_state_plot = TRUE, name_of_state = current_state)
 }
-  #### end loop to export States section ####
+#### end loop to export States section ####
 
 
 #### start countries graph section ####
@@ -719,11 +719,3 @@ sum_US_recovered <- global_recovered_data %>% filter(Country.Region == "US", dat
 # 
 # # write the daily confirmed cases/million table to a .csv
 # write.csv(global_confirmed_summary, paste("Tables/global_confirmed_count, ", Sys.Date(), ".csv", sep = ""))
-
-
-
-
-
-
-
-
