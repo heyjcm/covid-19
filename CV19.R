@@ -184,7 +184,7 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
     ylab(paste("Total ", graph_type, sep = "")) + # name the y-axis
     xlab("Date") + # name the x-axis
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) + # x-axis turned 90 degrees
-    scale_x_date(date_labels = "%b %d", date_breaks = "2 days", minor_breaks = NULL) + # x-axis label
+    scale_x_date(date_labels = "%b %d", date_breaks = "7 days", minor_breaks = NULL) + # x-axis label
     geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) #+ # add a vertical line at 20 Apr 2020
   
   if (lg_or_ln == "lg") {
@@ -563,6 +563,16 @@ global_death_data <- melt(global_deaths, id.vars = "Country.Region", measure.var
 global_death_data$variable<- str_replace(global_death_data$variable, "X", "")
 global_death_data$variable <- mdy(global_death_data$variable)
 global_death_data <- rename(global_death_data, date = variable, global_deaths = value)#rename(global_death_data, c(variable = "date", value = "global_deaths"))
+# this line aggregates each country's numbers by date
+# (some countries have multiple entries for each date due to provinces/regions)
+# some day I will turn this into a function
+# https://datascienceplus.com/aggregate-data-frame-r/
+global_death_data <- aggregate(x = global_death_data[c("global_deaths")],
+                              by = global_death_data[c("Country.Region", "date")],
+                              FUN = function(smash_together) {
+                                sum(pmax(smash_together, 0))
+                              }
+)
 
 # create DF of recovered
 global_recovered <- world_recovered %>%
@@ -574,6 +584,17 @@ global_recovered_data <- melt(global_recovered, id.vars = "Country.Region", meas
 global_recovered_data$variable<- str_replace(global_recovered_data$variable, "X", "")
 global_recovered_data$variable <- mdy(global_recovered_data$variable)
 global_recovered_data <- rename(global_recovered_data, date = variable, global_recovered = value)
+# this line aggregates each country's numbers by date
+# (some countries have multiple entries for each date due to provinces/regions)
+# some day I will turn this into a function
+# https://datascienceplus.com/aggregate-data-frame-r/
+global_recovered_data <- aggregate(x = global_recovered_data[c("global_recovered")],
+                               by = global_recovered_data[c("Country.Region", "date")],
+                               FUN = function(smash_together) {
+                                 sum(pmax(smash_together, 0))
+                               }
+)
+
 
 global_confirmed <- world_confirmed %>%
   filter(Country.Region %in% countries) %>%
@@ -583,14 +604,24 @@ date_columns <- colnames(global_confirmed[, 2:ncol(global_confirmed)])
 global_confirmed_data <- melt(global_confirmed, id.vars = "Country.Region", measure.vars = date_columns)
 global_confirmed_data$variable<- str_replace(global_confirmed_data$variable, "X", "")
 global_confirmed_data$variable <- mdy(global_confirmed_data$variable)
-global_confirmed_data <- rename(global_confirmed_data, date = variable, global_confirmed_data = value)
+global_confirmed_data <- rename(global_confirmed_data, date = variable, global_confirmed = value)
+# this line aggregates each country's numbers by date
+# (some countries have multiple entries for each date due to provinces/regions)
+# some day I will turn this into a function
+# https://datascienceplus.com/aggregate-data-frame-r/
+global_confirmed_data <- aggregate(x = global_confirmed_data[c("global_confirmed")],
+                                   by = global_confirmed_data[c("Country.Region", "date")],
+                                   FUN = function(smash_together) {
+                                     sum(pmax(smash_together, 0))
+                                   }
+)
 
 global_active_df <- global_confirmed_data
 global_active_df$global_deaths <- global_death_data$global_deaths
 global_active_df$global_recovered <- global_recovered_data$global_recovered
 global_active_df <- global_active_df %>%
   group_by(Country.Region, date) %>% 
-  summarize(global_active = global_confirmed_data - global_deaths - global_recovered)
+  summarize(global_active = global_confirmed - global_deaths - global_recovered)
 
 
 US_active_today <- global_active_df %>% filter(Country.Region == "US" & date == Sys.Date() - 1)
