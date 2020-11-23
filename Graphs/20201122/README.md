@@ -16,7 +16,7 @@ Except for Hawaii, all state confirmed cases have an upward trending curve; howe
 
 As we get into the colder months here in the northern hemisphere, and because people are more prone to staying inside, we will likely see a continued rise in confirmed cases until Spring.
 
-If I didn't post your favorite state, just let me know because I have them all, I just don't post them all. Or you can go to the link to my repo here and find your state: https://github.com/heyjcm/covid-19/tree/master/Graphs/20201115
+If I didn't post your favorite state, just let me know because I have them all, I just don't post them all. Or you can go to the link to my repo here and find your state: https://github.com/heyjcm/covid-19/tree/master/Graphs/20201122
 
 Please let me know if you have any requests!
 
