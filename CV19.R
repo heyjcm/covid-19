@@ -537,6 +537,13 @@ countries <- c("US",
                "Chile",
                "New Zealand")
 
+# Alternate countries
+# countries <- c("US",
+#                "China",
+#                "Canada"
+#                "Sweden",
+#                "Denmark")
+
 # colors to use for each country (countries will show up in alphabetical order
 # and the first country will be red, second is orange, and so on)
 countries_colors <- c("red",
@@ -640,13 +647,13 @@ countries_active_log <- global_active_df %>%
   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x), labels = trans_format("log10", math_format(10^.x))) +
   geom_vline(xintercept = as.numeric(as.Date("2020-04-20")), linetype=3) +
   annotate("text", x = as.Date("2020-04-20"), y = 450000, label = "*", color = "Purple", size = 18) + # * on line
-  annotate("text", x = as.Date("2020-01-24"), y = 300000, label = "*", color = "purple", size = 18) + # * on note
-  annotate("text", x = as.Date("2020-01-27"), y = 450000, label = "= US 20 Apr: 669,903 Active Cases", color = "Purple", size = 5, hjust = 0) +
-  annotate("text", x = as.Date("2020-01-27"), y = 200000, label = paste("   US Today: ", format(US_active_today$global_active, big.mark = ",", scientific = FALSE), " Active Cases", sep = ""), color = "Purple", size = 5, hjust = 0)
+  annotate("text", x = as.Date("2020-01-24"), y = 5000000, label = "*", color = "purple", size = 18) + # * on note
+  annotate("text", x = as.Date("2020-02-01"), y = 7500000, label = "= US 20 Apr: 669,903 Active Cases", color = "Purple", size = 5, hjust = 0) +
+  annotate("text", x = as.Date("2020-02-01"), y = 4100000, label = paste("   US Today: ", format(US_active_today$global_active, big.mark = ",", scientific = FALSE), " Active Cases", sep = ""), color = "Purple", size = 5, hjust = 0)
 
 print_plot(countries_active_log, plot_title = "countries_active_log", pl_height = 643, pl_res = 97)
 
-#### end countries graph section ####
+ #### end countries graph section ####
 
 #### start US daily active, confirmed, and deaths section ####
 
@@ -670,7 +677,7 @@ US_active_bar_plot <- US_active_bar_to_plot %>%
 
 # plot the US confirmed per day
 US_confirmed_data <- global_confirmed_data %>% filter(Country.Region == "US")
-US_confirmed_bar_to_plot <- mutate(US_confirmed_data, US_confirmed_delta = global_confirmed_data - lag(global_confirmed_data)) %>%
+US_confirmed_bar_to_plot <- mutate(US_confirmed_data, US_confirmed_delta = global_confirmed - lag(global_confirmed)) %>%
   filter(!is.na(US_confirmed_delta))
 
 US_confirmed_bar_plot <- US_confirmed_bar_to_plot %>%
