@@ -655,7 +655,7 @@ print_plot(countries_active_log, plot_title = "countries_active_log", pl_height 
 
  #### end countries graph section ####
 
-#### start US daily active, confirmed, and deaths section ####
+#### start US daily active, confirmed, and deaths section ###
 
 # plot the US active per day
 US_active_data <- global_active_df %>% filter(Country.Region == "US")
