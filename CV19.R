@@ -18,6 +18,7 @@ deaths_us <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISan
 confirmed_us <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"))
 rt_value <- read.csv(text = getURL("https://d14wlfuexuxgcm.cloudfront.net/covid/rt.csv"))
 
+
 # US numbers local (uncomment this section in case GitHub isn't working, hopefully this local data is up to date!!!)
 # deaths_us <- read.csv("JHU Repo/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv")
 # confirmed_us <- read.csv("JHU Repo/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
@@ -26,6 +27,10 @@ rt_value <- read.csv(text = getURL("https://d14wlfuexuxgcm.cloudfront.net/covid/
 world_deaths <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"))
 world_recovered <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv"))
 world_confirmed <- read.csv(text = getURL("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"))
+# csv from Tanu N Prabhu: https://www.kaggle.com/tanuprabhu/population-by-country-2020?select=population_by_country_2020.csv
+country_pop <- read.csv(file = 'population_by_country_2020.csv')
+# renaming the columns for clarity
+country_pop <- country_pop %>% rename(country = Country..or.dependency., population = Population..2020.)
 
 # world numbers local (uncomment this section in case GitHub isn't working, hopefully this local data is up to date!!!)
 # world_deaths <- read.csv("JHU Repo/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
@@ -128,7 +133,7 @@ death_data_to_plot_func <- function(death_data) {
 
 ### start make_graphs_func ###
 # Creates a graph in a specific format for this project
-make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", standardized = FALSE) {
+make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", standardized = FALSE, region_name = "State") {
   # initialized to "death_" to match default arg value
   title_of_plot <- "deaths_"
   
@@ -177,9 +182,9 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
   df_to_plot <- data_to_plot_df %>%
     ggplot(aes_string(x = "date", y = y_aes, color = "Province_State")) +
     geom_point() +
-    scale_color_manual(values = state_colors, name = "State") + # manually set the color to state_colors
+    scale_color_manual(values = graph_colors, name = region_name) + # manually set the color to state_colors
     geom_smooth() +
-    ggtitle(paste("COVID-19 ", graph_type, ", ", "[", graph_scale, " Scale]", sep = "")) +
+    ggtitle(paste("COVID-19 ", graph_type, " by ", region_name, " ", "[", graph_scale, " Scale]", sep = "")) +
     theme(plot.title = element_text(hjust = 0.5)) + # centers the title at the top
     ylab(paste("Total ", graph_type, sep = "")) + # name the y-axis
     xlab("Date") + # name the x-axis
@@ -191,6 +196,8 @@ make_graphs_func <- function(data_to_plot_df, d_or_c = "d", lg_or_ln = "lg", sta
     df_to_plot <- df_to_plot +
       scale_y_log10() # makes the y-axis on a log scale
   }
+  
+  title_of_plot <- paste(region_name, title_of_plot, sep = "_")
   
   print(paste("Exporting: ", title_of_plot, sep = ""))
   
@@ -224,8 +231,8 @@ list_of_primary_states <- c("Colorado",
                             "Arizona",
                             "Wisconsin")
 
-# colors for the primary States graphs
-state_colors <- c("red",
+# colors for the graphs
+graph_colors <- c("red",
                   "orange",
                   "chocolate",
                   "green",
@@ -234,7 +241,8 @@ state_colors <- c("red",
                   "pink",
                   "turquoise",
                   "skyblue",
-                  "saddlebrown")
+                  "saddlebrown",
+                  "magenta")
 
 # all the US States (and DC) in a list
 # used the built-in state.name and then inserted "District of Columbia" using sort() for alpha order
@@ -535,7 +543,8 @@ countries <- c("US",
                "Japan",
                "Argentina",
                "Chile",
-               "New Zealand")
+               "New Zealand",
+               "Brazil")
 
 # Alternate countries
 # countries <- c("US",
@@ -546,16 +555,42 @@ countries <- c("US",
 
 # colors to use for each country (countries will show up in alphabetical order
 # and the first country will be red, second is orange, and so on)
-countries_colors <- c("red",
-                      "orange",
-                      "chocolate",
-                      "green",
-                      "blue",
-                      "violet",
-                      "pink",
-                      "turquoise",
-                      "skyblue",
-                      "saddlebrown")
+# countries_colors <- c("red",
+#                       "orange",
+#                       "chocolate",
+#                       "green",
+#                       "blue",
+#                       "violet",
+#                       "pink",
+#                       "turquoise",
+#                       "skyblue",
+#                       "saddlebrown")
+
+
+################################################################################
+################################################################################
+
+# variable that holds a DF with the population of each country (per million)
+country_pop <- country_pop %>%
+  group_by(country) %>%
+  summarize(population = sum(population / 1000000))
+
+# list_of_countries <- data.frame(world_confirmed$Country.Region)
+# list_of_countries <- rename(list_of_countries, country_name = world_confirmed.Country.Region)
+# # Remove duplicates based on country_name columns
+# list_of_countries <- list_of_countries[!duplicated(list_of_countries$country_name), ]
+# list_of_countries <- data.frame(list_of_countries)
+
+# change the country names from country_pop DF to match the country names in the JHU DF
+country_pop$country <- gsub("United States", "US", country_pop$country)
+country_pop$country <- gsub("South Korea", "Korea, South", country_pop$country)
+country_pop$country <- gsub("Taiwan", "Taiwan*", country_pop$country)
+country_pop$country <- gsub("Côte d'Ivoire", "Cote d'Ivoire", country_pop$country)
+
+################################################################################
+################################################################################
+
+
 
 global_positions_to_remove <- c(1, 3:4) # indeces of the columns that aren't needed in the graph
 
@@ -570,6 +605,7 @@ global_death_data <- melt(global_deaths, id.vars = "Country.Region", measure.var
 global_death_data$variable<- str_replace(global_death_data$variable, "X", "")
 global_death_data$variable <- mdy(global_death_data$variable)
 global_death_data <- rename(global_death_data, date = variable, global_deaths = value)#rename(global_death_data, c(variable = "date", value = "global_deaths"))
+
 # this line aggregates each country's numbers by date
 # (some countries have multiple entries for each date due to provinces/regions)
 # some day I will turn this into a function
@@ -580,6 +616,34 @@ global_death_data <- aggregate(x = global_death_data[c("global_deaths")],
                                 sum(pmax(smash_together, 0))
                               }
 )
+
+# merge the country_pop table with the global_death_data table
+global_death_data$Population <- country_pop$population[match(global_death_data$Country.Region, country_pop$country)]
+
+
+
+################################################################################
+################################################################################
+
+### plot deaths per million, linear ###
+# create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
+global_deaths_per_million_data <- global_death_data %>%
+  group_by(Country.Region, date) %>%
+  summarize(total_deaths = sum(global_deaths / Population))
+
+global_deaths_per_million_data <- rename(global_deaths_per_million_data, Province_State = Country.Region)
+
+### start deaths per million plot, log ###
+make_graphs_func(global_deaths_per_million_data, d_or_c = "d", lg_or_ln = "lg", standardized = TRUE, region_name = "Country")
+### end deaths per million plot, log ###
+
+### start deaths per million plot, linear ###
+make_graphs_func(global_deaths_per_million_data, d_or_c = "d", lg_or_ln = "ln", standardized = TRUE, region_name = "Country")
+### end deaths per million plot, linear ###
+
+################################################################################
+################################################################################
+
 
 # create DF of recovered
 global_recovered <- world_recovered %>%
@@ -602,6 +666,9 @@ global_recovered_data <- aggregate(x = global_recovered_data[c("global_recovered
                                }
 )
 
+# merge the country_pop table with the global_recovered_data table
+global_recovered_data$Population <- country_pop$population[match(global_recovered_data$Country.Region, country_pop$country)]
+
 
 global_confirmed <- world_confirmed %>%
   filter(Country.Region %in% countries) %>%
@@ -623,6 +690,36 @@ global_confirmed_data <- aggregate(x = global_confirmed_data[c("global_confirmed
                                    }
 )
 
+# merge the country_pop table with the global_confirmed_data table
+global_confirmed_data$Population <- country_pop$population[match(global_confirmed_data$Country.Region, country_pop$country)]
+
+################################################################################
+################################################################################
+
+### plot deaths per million, linear ###
+# create death_data DF with State, date, and sum of deaths per State by date to be used for population-weighted graph
+global_confirmed_per_million_data <- global_confirmed_data %>%
+  group_by(Country.Region, date) %>%
+  summarize(total_confirmed = sum(global_confirmed / Population))
+
+global_confirmed_per_million_data <- rename(global_confirmed_per_million_data, Province_State = Country.Region)
+
+### start deaths per million plot, log ###
+make_graphs_func(global_confirmed_per_million_data, d_or_c = "c", lg_or_ln = "lg", standardized = TRUE, region_name = "Country")
+### end deaths per million plot, log ###
+
+### start deaths per million plot, linear ###
+make_graphs_func(global_confirmed_per_million_data, d_or_c = "c", lg_or_ln = "ln", standardized = TRUE, region_name = "Country")
+### end deaths per million plot, linear ###
+
+################################################################################
+################################################################################
+
+
+
+
+
+
 global_active_df <- global_confirmed_data
 global_active_df$global_deaths <- global_death_data$global_deaths
 global_active_df$global_recovered <- global_recovered_data$global_recovered
@@ -636,7 +733,7 @@ US_active_today <- global_active_df %>% filter(Country.Region == "US" & date == 
 countries_active_log <- global_active_df %>% 
   ggplot(aes(x = date, y = global_active, color = Country.Region)) +
   geom_point() +
-  scale_color_manual(values = countries_colors, name = "Country") + # manually set the color to countries_colors
+  scale_color_manual(values = graph_colors, name = "Country") + # manually set the color to graph_colors
   geom_line() +
   ggtitle("Active Cases = Confirmed - Deaths - Recovered, [Logarithmic Scale]") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -655,7 +752,7 @@ print_plot(countries_active_log, plot_title = "countries_active_log", pl_height 
 
  #### end countries graph section ####
 
-#### start US daily active, confirmed, and deaths section ###
+#### start US daily active, confirmed, and deaths section ####
 
 # plot the US active per day
 US_active_data <- global_active_df %>% filter(Country.Region == "US")
