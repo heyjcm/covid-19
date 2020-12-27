@@ -18,7 +18,7 @@ And to everyone, we wish you a Happy New Year and may the new year be filled wit
 
 This week, I added Brazil to the list of countries as promised to my friend Rafael. In addition, another request by my friend Lesley prompted a per-million graph of the country death and confirmed cases graph.
 
-The confirmed cases graph looks like US is #1## (which we knew), but now I have a graph normalizing based on population. Deaths, on the other hand, makes the US not look so bad. It appears Italy and Argentina (from my small subset of chosen countries) are ahead.
+The confirmed cases graph looks like US is #1 (which we knew), but now I have a graph normalizing based on population. Deaths, on the other hand, makes the US not look so bad. It appears Italy and Argentina (from my small subset of chosen countries) are ahead.
 
 As for US trends, we continue to climb in both confirmed cases and deaths; however, I'm happy to report that, at least in Colorado, confirmed cases started a downward trend starting at the beginning of December. Keep it up, Colorado!
 
