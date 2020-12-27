@@ -22,6 +22,6 @@ The confirmed cases graph looks like US is #1## (which we knew), but now I have 
 
 As for US trends, we continue to climb in both confirmed cases and deaths; however, I'm happy to report that, at least in Colorado, confirmed cases started a downward trend starting at the beginning of December. Keep it up, Colorado!
 
-If I didn't post your favorite state, just let me know because I have them all, I just don't post them all. Or you can go to the link to my repo here and find your state: https://github.com/heyjcm/covid-19/tree/master/Graphs/20201213
+If I didn't post your favorite state, just let me know because I have them all, I just don't post them all. Or you can go to the link to my repo here and find your state: https://github.com/heyjcm/covid-19/tree/master/Graphs/20201227
 
 Please let me know if you have any requests!
